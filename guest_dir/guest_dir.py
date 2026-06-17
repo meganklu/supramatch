@@ -9,12 +9,12 @@ Description: This module contains functions to read and write a directory of gue
 
 from datetime import datetime
 
-def init(directory):
+def init(dir):
     """
     Initialize a directory for use as a guest molecule directory.
 
     Args:
-        directory: the name of the directory.
+        dir: the name of the guest molecule directory.
 
     Returns:
         True if the directory was successfully marked as a scraper-created directory.
@@ -24,7 +24,7 @@ def init(directory):
         The directory must already exist. The function does not create it.
     """
 
-    scraper_file = directory + "/.scraper"
+    scraper_file = dir + "/.scraper"
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:
         with open(scraper_file, "w") as file:
@@ -33,5 +33,11 @@ def init(directory):
     except OSError:
         return False
 
-def save(directory, guest_ID, guest_info):
-    """
+def save(dir, guest_ID, guest_info):
+    # TODO
+
+def validate(dir):
+    # TODO
+
+def load(dir, guest_ID):
+    # TODO
