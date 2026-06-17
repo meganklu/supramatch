@@ -1,0 +1,17 @@
+# Core dependencies
+sqlalchemy>=2.0.0
+click>=8.0.0
+
+# Chemistry packages
+CageCavityCalc
+cirpy>=1.0.2
+
+# Molecular analysis
+openbabel-wheel>=3.1.1
+mdanalysis>=2.6.0
+
+# Database migration tool
+alembic>=1.12.0
+
+# Utilities
+python-dotenv>=1.0.0

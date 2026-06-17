@@ -1,13 +1,35 @@
-# supramatch
+# Supramatch
 
-## Modules
+A Python program for matching host metal–organic cages to guest molecules based on packing coefficient and guest molecule price.
 
-* `scraper`: scrape Sigma-Aldrich website for chemical information (name, CAS number, price, physical state, etc.)
-* `cage_calc`: calculate the volume of the cage cavity
-* `guest_calc`: calculate the volume of the guest molecule
-* `pc_calc`: calculate the packing coefficient for the host–guest pairing
-* `matcher`: evalute and select guest molecules for the host 
+## Requirements
 
-## Common Library
+- **Python**: 3.12+
+- **Operating System**: Linux, macOS, or Windows
+- **Disk Space**: ~2 GB for conda environment
 
-* `guest_dir`: functions to handle reading and writing a directory of guest molecule files
+## Quick Start
+
+### Installation
+
+```bash
+# 1. Clone repository
+git clone https://github.com/meganklu/supramatch.git
+cd supramatch
+
+# 2. Create and activate conda environment
+conda env create -f environment.yml
+conda activate supramatch_env
+
+# 3. Initialize database
+python -m supramatch.db.database
+
+# 4. Verify installation
+python -c "
+import CageCavityCalc
+import rdkit
+import sqlalchemy
+import click
+print('✓ All packages installed successfully')
+"
+```

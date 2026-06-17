@@ -1,0 +1,17 @@
+name: supramatch_env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - openbabel
+  - mdanalysis
+  - rdkit
+  - pip
+  - pip:
+    - sqlalchemy>=2.0.0
+    - click>=8.0.0
+    - CageCavityCalc
+    - cirpy>=1.0.2
+    - alembic>=1.12.0
+    - python-dotenv>=1.0.0
