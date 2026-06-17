@@ -2,6 +2,8 @@
 
 `cage_calc.py` calculate the volume of the cage cavity and saves this information to a cage information file.
 
+Uses [CageCavityCalc](https://github.com/VicenteMartiCentelles/CageCavityCalc).
+
 ## Usage
 
 ```
