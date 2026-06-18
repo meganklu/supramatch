@@ -10,11 +10,13 @@ Evaluation Criteria:
 import sys
 from pathlib import Path
 from typing import List, Optional
-from sqlalchemy import desc, asc
+from sqlalchemy import desc, asc, select
 
-from ..db.database import get_session
+from ..db.models import Guest
 from ..db.models import Cage, Guest, HostGuestPairing
+from ..db.database import get_session
 
+from supramatch.config import HG_MATCH_CONFIG
 
 class MatchingEngine:
     """
@@ -90,10 +92,8 @@ class MatchingEngine:
             raise ValueError(f"Guest with ID {guest_id} not found")
         
         # Check if pairing already exists
-        existing = self.session.query(HostGuestPairing).filter_by(
-            cage_id=cage_id,
-            guest_id=guest_id
-        ).first()
+        stmt = select(HostGuestPairing).filter_by(cage_id=cage_id, guest_id=guest_id)
+        existing = self.session.scalars(stmt).first()
         
         if existing:
             raise ValueError(f"Pairing already exists for cage {cage_id} and guest {guest_id}")
@@ -177,34 +177,35 @@ class MatchingEngine:
             raise ValueError(f"Cage with ID {cage_id} not found")
         
         # Build query
-        query = self.session.query(HostGuestPairing).filter(
+        stmt = select(HostGuestPairing).where(
             HostGuestPairing.cage_id == cage_id,
             HostGuestPairing.packing_coefficient >= pc_min,
             HostGuestPairing.packing_coefficient <= pc_max
         )
         
         if only_viable:
-            query = query.filter(HostGuestPairing.is_viable == True)
+            stmt = stmt.where(HostGuestPairing.is_viable == True)
         
-        if max_price is not None:
-            query = query.join(Guest).filter(Guest.price_per_gram <= max_price)
+        needs_guest_join = max_price is not None or min_price is not None
+        if needs_guest_join:
+            stmt = stmt.join(Guest)
         
-        if min_price is not None:
-            query = query.join(Guest).filter(Guest.price_per_gram >= min_price)
-        
+            if max_price is not None:
+                stmt = stmt.where(Guest.price_per_gram <= max_price)
+            
+            if min_price is not None:
+                stmt = stmt.where(Guest.price_per_gram >= min_price)
+    
+        result = self.session.execute(stmt)
+        pairings = result.scalars().all()
+
         # Apply sorting
         if sort_by == 'quality_score':
-            # Quality score is calculated property, so sort in Python
-            pairings = query.all()
             pairings.sort(key=lambda p: p.quality_score, reverse=True)
         elif sort_by == 'packing_coefficient':
-            query = query.order_by(desc(HostGuestPairing.packing_coefficient))
-            pairings = query.all()
+            pairings.sort(key=lambda p: p.packing_coefficient, reverse=True)
         elif sort_by == 'price':
-            query = query.join(Guest).order_by(Guest.price_per_gram)
-            pairings = query.all()
-        else:
-            pairings = query.all()
+            pairings.sort(key=lambda p: p.guest.price_per_gram if p.guest.price_per_gram else float('inf'))
         
         if limit:
             pairings = pairings[:limit]
@@ -228,20 +229,18 @@ class MatchingEngine:
             raise ValueError(f"Cage with ID {cage_id} not found")
         
         # Get guest list
+        stmt = select(Guest)
         if guest_ids:
-            guests = self.session.query(Guest).filter(Guest.id.in_(guest_ids)).all()
-        else:
-            guests = self.session.query(Guest).all()
+            stmt = stmt.where(Guest.id.in_(guest_ids))
+        guests = self.session.execute(stmt).all()
         
         results = {'created': 0, 'skipped': 0, 'failed': 0}
         
         for guest in guests:
             try:
                 # Check if pairing already exists
-                existing = self.session.query(HostGuestPairing).filter_by(
-                    cage_id=cage_id,
-                    guest_id=guest.id
-                ).first()
+                stmt = select(HostGuestPairing).filter_by(cage_id=cage_id, guest_id=guest_id)
+                existing = self.session.scalars(stmt).first()
                 
                 if existing:
                     results['skipped'] += 1
@@ -283,9 +282,10 @@ class MatchingEngine:
     
     def delete_all_pairings_for_cage(self, cage_id: int) -> int:
         """Delete all pairings for a cage."""
-        count = self.session.query(HostGuestPairing).filter_by(cage_id=cage_id).delete()
+        stmt = delete(HostGuestPairing).where(cage_id=cage_id)
+        result = self.session.execute(stmt)
         self.session.commit()
-        return count
+        return result.rowcount
     
     def close(self):
         """Close database session."""
@@ -313,7 +313,10 @@ def main(args):
         python -m supramatch.modules.hg_match 1 create
         python -m supramatch.modules.hg_match 1 match --sort quality_score --limit 10
         python -m supramatch.modules.hg_match 1 match --pc-min 0.3 --pc-max 0.7 --max-price 5.0
+        python -m supramatch.modules.hg_match 1 match --pc-min 0.3 --pc-max 0.7 --max-price 5.0 --min-price 1.0 --sort quality_score --limit 10
     """
+    from supramatch.utils.helpers import format_volume, format_price, format_packing_coefficient
+
     if len(args) < 3:
         print("Usage: python -m supramatch.modules.hg_match <cage_id> <command> [options]", file=sys.stderr)
         return 1
@@ -326,8 +329,9 @@ def main(args):
 
     command = args[2]
     if command == 'create': 
+        engine = MatchingEngine()
+
         try:
-            engine = MatchingEngine()
             engine.batch_create_pairings(cage_id)
             return 0
 
@@ -388,7 +392,8 @@ def main(args):
                 return 0
             
             cage = engine.session.get(Cage, cage_id)
-            print(f"\nMatches for cage '{cage.name}' (Volume: {cage.cavity_volume:.2f} Å³):\n")
+            cage_volume_str = format_volume(cage.cavity_volume)
+            print(f"\nMatches for cage '{cage.name}' (Volume: {cage_volume_str}):\n")
             
             print(f"{'#':<4} {'Guest Name':<25} {'PC':>8} {'$/g':>10} {'Score':>8}")
             print("-" * 80)
@@ -396,11 +401,14 @@ def main(args):
             for idx, pairing in enumerate(matches, 1):
                 guest = pairing.guest
                 
+                pc_str = format_packing_coefficient(pairing.packing_coefficient)
+                price_str = format_price(guest.price_per_gram)
+
                 print(
                     f"{idx:<4} "
                     f"{guest.name:<25} "
-                    f"{pairing.packing_coefficient:>8.3f} "
-                    f"${guest.price_per_gram if guest.price_per_gram else 0:>9.2f} "
+                    f"{pc_str:>8} "
+                    f"{price_str:>10} "
                     f"{pairing.quality_score:>8.1f}"
                 )
             
