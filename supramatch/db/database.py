@@ -8,16 +8,13 @@ import sys
 import os
 import logging
 from typing import Generator, Optional
-
 from sqlalchemy import create_engine, event, Engine
 from sqlalchemy.orm import sessionmaker, scoped_session, Session
 from sqlalchemy.pool import StaticPool
-
 from supramatch.config import DATABASE_URL
 from supramatch.db.base import Base
 
 logger = logging.getLogger(__name__)
-
 
 # Create engine
 def _create_engine() -> Engine:
@@ -82,13 +79,13 @@ def init_db() -> None:
         >>> print("Database initialized")
     """
     try:
+        logger.info(f"Initializing database: {DATABASE_URL}")
         Base.metadata.create_all(bind=engine)
         logger.info(f"Database initialized: {DATABASE_URL}")
     
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
         raise
-
 
 def get_session() -> Session:
     """
@@ -130,7 +127,6 @@ def close_session() -> None:
     SessionLocal.remove()
     logger.debug("Database session closed")
 
-
 def get_session_context() -> Generator[Session, None, None]:
     """
     Context manager for database sessions.
@@ -159,7 +155,6 @@ def get_session_context() -> Generator[Session, None, None]:
         raise
     finally:
         session.close()
-
 
 def drop_all_tables() -> None:
     """

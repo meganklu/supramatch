@@ -11,9 +11,15 @@ Units:
     - Packing coefficient: Dimensionless (0-1)
 """
 
+import logging
+
+from supramatch import logging_config  # noqa: F401
+
 __version__ = "0.1.0"
 __author__ = "Megan K. Lu"
 __email__ = "megan.k.lu.28@dartmouth.edu"
+
+logger = logging.getLogger(__name__)
 
 from supramatch.db.database import init_db, get_session, close_session
 from supramatch.db.models import Cage, Guest, HostGuestPairing
@@ -38,3 +44,5 @@ __all__ = [
     "format_price",
     "format_packing_coefficient",
 ]
+
+logger.debug(f"Supramatch {__version__} initialized")
