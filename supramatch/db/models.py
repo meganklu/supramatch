@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional, List
 
 from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Index
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 from supramatch.db.base import Base, TimestampMixin
 
@@ -35,14 +35,14 @@ class Cage(Base, TimestampMixin):
     __tablename__ = "cages"
     
     # Columns
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), unique=True, nullable=False, index=True)
-    cas_number = Column(String(50), unique=True, nullable=True, index=True)
-    pdb_file = Column(String(500), nullable=True)
-    cavity_volume = Column(Float, nullable=True, doc="Cavity volume in Å³")
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    cas_number: Mapped[Optional[str]] = mapped_column(String(50), unique=True, nullable=True, index=True)
+    pdb_file: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    cavity_volume: Mapped[Optional[float]] = mapped_column(Float, nullable=True, doc="Cavity volume in Å³")
     
     # Relationships
-    pairings: List["HostGuestPairing"] = relationship(
+    pairings: Mapped[List["HostGuestPairing"]] = relationship(
         "HostGuestPairing",
         back_populates="cage",
         cascade="all, delete-orphan",
@@ -68,10 +68,11 @@ class Cage(Base, TimestampMixin):
     
     @property
     def best_matching_guest(self) -> Optional["HostGuestPairing"]:
-        """Get pairing with highest packing coefficient."""
+        """Get pairing with packing coefficient closest to 0.55."""
         if not self.pairings:
             return None
-        return max(self.pairings, key=lambda p: p.packing_coefficient)
+        # Find pairing closest to ideal PC of 0.55
+        return min(self.pairings, key=lambda p: abs(p.packing_coefficient - 0.55))
     
     @property
     def cheapest_guest(self) -> Optional["HostGuestPairing"]:
@@ -93,8 +94,8 @@ class Guest(Base, TimestampMixin):
         name: Molecule name
         cas_number: CAS registry number
         smiles: SMILES string for molecule structure
-        molecular_weight: Molecular weight in g/mol
-        molar_volume: Molar volume in Å³
+        molar_mass: Molar mass in g/mol
+        molecular_volume: Molecular volume in Å³
         price_per_gram: Cost in USD per gram ($/g)
         supplier: Supplier name (e.g., Sigma-Aldrich)
         physical_state: Physical state (solid/liquid/gas)
@@ -104,7 +105,7 @@ class Guest(Base, TimestampMixin):
         pairings: Relationship to HostGuestPairing
     
     Volume Units:
-        molar_volume: Å³
+        molecular_volume: Å³
         Calculated from SMILES using RDKit's ComputeMolVolume()
         Represents volume of a particular conformer of a molecule
     
@@ -117,8 +118,8 @@ class Guest(Base, TimestampMixin):
         >>> guest = Guest(
         ...     name="Benzene",
         ...     smiles="c1ccccc1",
-        ...     molecular_weight=78.11,      # g/mol
-        ...     molar_volume=89.2,           # Å³
+        ...     molar_mass=78.11,            # g/mol
+        ...     molecular_volume=89.2,       # Å³
         ...     price_per_gram=0.59          # $/g
         ... )
     """
@@ -126,19 +127,19 @@ class Guest(Base, TimestampMixin):
     __tablename__ = "guests"
     
     # Columns
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), nullable=False, index=True)
-    cas_number = Column(String(50), unique=True, nullable=True, index=True)
-    smiles = Column(String(500), nullable=False, index=True)
-    molecular_weight = Column(Float, nullable=True, doc="Molecular weight in g/mol")
-    molar_volume = Column(Float, nullable=True, doc="Molar volume in Å³")
-    price_per_gram = Column(Float, nullable=True, doc="Price in USD per gram ($/g)")
-    supplier = Column(String(255), nullable=True, index=True)
-    physical_state = Column(String(50), nullable=True)
-    url = Column(String(500), nullable=True)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    cas_number: Mapped[Optional[str]] = mapped_column(String(50), unique=True, nullable=True, index=True)
+    smiles: Mapped[str] = mapped_column(String(500), nullable=False, index=True)
+    molar_mass: Mapped[Optional[float]] = mapped_column(Float, nullable=True, doc="Molar mass in g/mol")
+    molecular_volume: Mapped[Optional[float]] = mapped_column(Float, nullable=True, doc="Molecular volume in Å³")
+    price_per_gram: Mapped[Optional[float]] = mapped_column(Float, nullable=True, doc="Price in USD per gram ($/g)")
+    supplier: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
+    physical_state: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     
     # Relationships
-    pairings: List["HostGuestPairing"] = relationship(
+    pairings: Mapped[List["HostGuestPairing"]] = relationship(
         "HostGuestPairing",
         back_populates="guest",
         cascade="all, delete-orphan",
@@ -210,25 +211,20 @@ class HostGuestPairing(Base, TimestampMixin):
     __tablename__ = "pairings"
     
     # Columns
-    id = Column(Integer, primary_key=True, index=True)
-    cage_id = Column(Integer, ForeignKey("cages.id", ondelete="CASCADE"), nullable=False, index=True)
-    guest_id = Column(Integer, ForeignKey("guests.id", ondelete="CASCADE"), nullable=False, index=True)
-    packing_coefficient = Column(
-        Float,
-        nullable=False,
-        index=True,
-        doc="Packing coefficient (dimensionless, 0-1)"
-    )
-    is_viable = Column(Boolean, default=True, index=True)
-    notes = Column(String(1000), nullable=True)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    cage_id: Mapped[int] = mapped_column(ForeignKey("cages.id", ondelete="CASCADE"), nullable=False, index=True)
+    guest_id: Mapped[int] = mapped_column(ForeignKey("guests.id", ondelete="CASCADE"), nullable=False, index=True)
+    packing_coefficient: Mapped[float] = mapped_column(Float, nullable=False, index=True, doc="Packing coefficient (dimensionless, 0-1)")
+    is_viable: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    notes: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
     
     # Relationships
-    cage: Cage = relationship(
+    cage: Mapped[Cage] = relationship(
         "Cage",
         back_populates="pairings",
         foreign_keys=[cage_id]
     )
-    guest: Guest = relationship(
+    guest: Mapped[Guest] = relationship(
         "Guest",
         back_populates="pairings",
         foreign_keys=[guest_id]
