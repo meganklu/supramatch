@@ -9,9 +9,13 @@ from pathlib import Path
 from typing import Optional, Tuple
 from rdkit import Chem
 from rdkit.Chem import AllChem, Descriptors
+from sqlalchemy import select
 
-from ..db.database import get_session
+from ..db.base import Base, TimestampMixin 
 from ..db.models import Guest
+from ..db.database import get_session
+
+from supramatch.config import GUEST_CALC_CONFIG
 
 class GuestCalculator:
     """
@@ -84,6 +88,8 @@ class GuestCalculator:
         except Exception as e:
             raise ValueError(f"Failed to calculate volume for SMILES '{smiles}': {e}")
     
+    # ==================== DATABASE OPERATIONS ====================
+
     def create_guest(
         self,
         name: str,
@@ -134,11 +140,13 @@ class GuestCalculator:
         
         # Check if guest already exists by CAS number or name
         if cas_number:
-            existing = self.session.query(Guest).filter_by(cas_number=cas_number).first()
+            stmt = select(Guest).filter_by(cas_number=cas_number)
+            existing = self.session.scalars(stmt).first()
             if existing:
                 raise ValueError(f"Guest with CAS number '{cas_number}' already exists")
         
-        existing = self.session.query(Guest).filter_by(name=name).first()
+        stmt = select(Guest).filter_by(name=name)
+        existing = self.session.scalars(stmt).first()
         if existing:
             raise ValueError(f"Guest with name '{name}' already exists")
         
@@ -179,40 +187,42 @@ class GuestCalculator:
     def get_guest(self, guest_id: int = None, cas_number: str = None, name: str = None) -> Optional[Guest]:
         """Retrieve a guest from the database."""
         if guest_id:
-            return self.session.query(Guest).get(guest_id)
+            return self.session.get(Guest, guest_id)
         elif cas_number:
-            return self.session.query(Guest).filter_by(cas_number=cas_number).first()
+            stmt = select(Guest).filter_by(cas_number=cas_number)
+            return self.session.scalars(stmt).first()
         elif name:
-            return self.session.query(Guest).filter_by(name=name).first()
+            stmt = select(Guest).filter_by(name=name)
+            return self.session.scalars(stmt).first()
         return None
     
     def search_guests(self, name_pattern: str = None, supplier: str = None):
         """Search for guests with flexible criteria."""
-        query = self.session.query(Guest)
+        stmt = select(Guest)
         
         if name_pattern:
-            query = query.filter(Guest.name.ilike(f"%{name_pattern}%"))
+            stmt = stmt.where(Guest.name.ilike(f"%{name_pattern}%"))
         
         if supplier:
-            query = query.filter_by(supplier=supplier)
+            stmt = stmt.filter_by(supplier=supplier)
         
-        return query.all()
+        return self.session.scalars(stmt).all()
     
     def list_guests(self, limit: int = None, offset: int = 0):
         """Get all guests from the database with optional pagination."""
-        query = self.session.query(Guest).offset(offset)
+        stmt = select(Guest).offset(offset)
         
         if limit:
-            query = query.limit(limit)
+            stmt = stmt.limit(limit)
         
-        return query.all()
+        return self.session.scalars(stmt).all()
     
     def update_guest_price(self, guest_id: int, new_price_per_gram: float) -> bool:
         """Update guest price without recalculating properties."""
         if new_price_per_gram < 0:
             raise ValueError("Price cannot be negative")
         
-        guest = self.session.query(Guest).get(guest_id)
+        guest = self.session.get(Guest, guest_id)
         
         if guest:
             guest.price_per_gram = new_price_per_gram
@@ -223,7 +233,7 @@ class GuestCalculator:
     
     def update_guest_url(self, guest_id: int, url: str) -> bool:
         """Update guest supplier URL."""
-        guest = self.session.query(Guest).get(guest_id)
+        guest = self.session.get(Guest, guest_id)
         
         if guest:
             guest.url = url
@@ -234,7 +244,7 @@ class GuestCalculator:
     
     def recalculate_volume(self, guest_id: int) -> Optional[float]:
         """Recalculate volume for a guest from stored SMILES."""
-        guest = self.session.query(Guest).get(guest_id)
+        guest = self.session.get(Guest, guest_id)
         
         if not guest or not guest.smiles:
             return None
@@ -251,7 +261,7 @@ class GuestCalculator:
     
     def delete_guest(self, guest_id: int) -> bool:
         """Delete a guest from the database."""
-        guest = self.session.query(Guest).get(guest_id)
+        guest = self.session.get(Guest, guest_id)
         
         if guest:
             self.session.delete(guest)
@@ -277,6 +287,8 @@ def main(args):
         python -m supramatch.modules.guest_calc c1ccccc1 --name Benzene --cas 71-43-2
         python -m supramatch.modules.guest_calc "Br[C@]12C[C@@H]3C[C@H](C1)C[C@@](Br)(C3)C2" --name 1,3-Dibromoadamantane --cas 876-53-9 --price 75.75
     """
+    from supramatch.utils.helpers import format_volume
+
     if len(args) < 2:
         print("Usage: python -m supramatch.modules.guest_calc <smiles> [options]", file=sys.stderr)
         return 1
@@ -323,12 +335,14 @@ def main(args):
         if not name:
             # Just calculate properties without storing
             molecular_volume = calculator.calculate_volume(smiles=smiles)
-            print(f"Volume: {molecular_volume:.2f} Å³")
+            volume_str = format_volume(molecular_volume)
+            print(f"Volume: {volume_str}")
         else:
             # Create guest in database
             guest = calculator.create_guest(name, smiles, molar_mass, cas_number, supplier, price_per_gram, physical_state, url)
+            volume_str = format_volume(guest.molecular_volume)
             print(f"✓ Created guest '{guest.name}'")
-            print(f"  Volume: {guest.molecular_volume:.2f} Å³")
+            print(f"  Volume: {volume_str}")
         
         calculator.close()
         return 0

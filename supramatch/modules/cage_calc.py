@@ -8,9 +8,13 @@ import sys
 from pathlib import Path
 from typing import Optional
 from CageCavityCalc.CageCavityCalc import cavity
+from sqlalchemy import select
 
-from ..db.database import get_session
+from ..db.base import Base, TimestampMixin 
 from ..db.models import Cage
+from ..db.database import get_session
+
+from supramatch.config import CAGE_CALC_CONFIG
 
 class CageCalculator:
     """
@@ -22,7 +26,7 @@ class CageCalculator:
     
     def __init__(self):
         self.session = get_session()
-        
+
         # Load config parameters
         self.grid_spacing = CAGE_CALC_CONFIG["grid_spacing"]
         self.distance_threshold_multiplier = CAGE_CALC_CONFIG["distance_threshold_multiplier"]
@@ -146,7 +150,8 @@ class CageCalculator:
             cage_name = self.extract_cage_name(str(pdb_path))
         
         # Check if cage already exists
-        existing = self.session.query(Cage).filter_by(name=cage_name).first()
+        stmt = select(Cage).filter_by(name=cage_name)
+        existing = self.session.scalars(stmt).first()
         if existing:
             raise ValueError(f"Cage '{cage_name}' already exists in database")
         
@@ -178,9 +183,10 @@ class CageCalculator:
             Cage: The cage object or None if not found.
         """
         if cage_id:
-            return self.session.query(Cage).get(cage_id)
+            return self.session.get(Cage, cage_id)
         elif cage_name:
-            return self.session.query(Cage).filter_by(name=cage_name).first()
+            stmt = select(Cage).filter_by(name=cage_name)
+            return self.session.scalars(stmt).first()
         return None
     
     def list_cages(self):
@@ -190,7 +196,8 @@ class CageCalculator:
         Returns:
             list: List of all Cage objects.
         """
-        return self.session.query(Cage).all()
+        stmt = select(Cage)
+        return self.session.scalars(stmt).all()
     
     def update_cage_volume(self, cage_id: int, recalculate: bool = False) -> Optional[float]:
         """
@@ -203,7 +210,7 @@ class CageCalculator:
         Returns:
             float: New volume in Ų or None if cage not found.
         """
-        cage = self.session.query(Cage).get(cage_id)
+        cage = self.session.get(Cage, cage_id)
         
         if not cage:
             return None
@@ -230,7 +237,7 @@ class CageCalculator:
         Returns:
             bool: True if deleted, False if not found.
         """
-        cage = self.session.query(Cage).get(cage_id)
+        cage = self.session.get(Cage, cage_id)
         
         if cage:
             self.session.delete(cage)
@@ -253,6 +260,8 @@ def main(args):
     Example:
         python -m supramatch.modules.cage_calc data/cage.pdb --name MyCage
     """
+    from supramatch.utils.helpers import format_volume
+
     if len(args) < 2:
         print("Usage: python -m supramatch.modules.cage_calc <pdb_file> [--name name] [--cas number]", file=sys.stderr)
         return 1
@@ -277,7 +286,8 @@ def main(args):
     
     try:
         cage = calculator.create_cage(pdb_file, cage_name, cas_number)
-        print(f"✓ Created cage '{cage.name}': {cage.cavity_volume:.2f} Å³")
+        volume_str = format_volume(cage.cavity_volume)
+        print(f"✓ Created cage '{cage.name}': {volume_str}")
         calculator.close()
         return 0
     

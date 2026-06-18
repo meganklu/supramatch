@@ -41,7 +41,7 @@ python -m supramatch.modules.guest_calc c1ccccc1 --name Benzene --mass 78.11 --c
 python -m supramatch.modules.hg_match 1 create
 
 # 5. Find Matches
-python -m supramatch.modules.hg_match 1 match --pc-min 0.3 --pc-max 0.7 --max-price 5.0 --min_price 1.0 --sort quality_score --limit 10
+python -m supramatch.modules.hg_match 1 match --pc-min 0.3 --pc-max 0.7 --max-price 5.0 --min-price 1.0 --sort quality_score --limit 10
 ```
 
 ## References

@@ -196,8 +196,7 @@ class MatchingEngine:
             if min_price is not None:
                 stmt = stmt.where(Guest.price_per_gram >= min_price)
     
-        result = self.session.execute(stmt)
-        pairings = result.scalars().all()
+        pairings = self.session.scalars(stmt).all()
 
         # Apply sorting
         if sort_by == 'quality_score':
@@ -232,14 +231,14 @@ class MatchingEngine:
         stmt = select(Guest)
         if guest_ids:
             stmt = stmt.where(Guest.id.in_(guest_ids))
-        guests = self.session.execute(stmt).all()
+        guests = self.session.scalars(stmt).all()
         
         results = {'created': 0, 'skipped': 0, 'failed': 0}
         
         for guest in guests:
             try:
                 # Check if pairing already exists
-                stmt = select(HostGuestPairing).filter_by(cage_id=cage_id, guest_id=guest_id)
+                stmt = select(HostGuestPairing).filter_by(cage_id=cage_id, guest_id=guest.id)
                 existing = self.session.scalars(stmt).first()
                 
                 if existing:
@@ -333,6 +332,7 @@ def main(args):
 
         try:
             engine.batch_create_pairings(cage_id)
+            print(f"✓ Created pairings for cage {cage_id}")
             return 0
 
         except Exception as e:

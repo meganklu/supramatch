@@ -20,6 +20,7 @@ from supramatch.db.models import Cage, Guest, HostGuestPairing
 from supramatch.modules.cage_calc import CageCalculator
 from supramatch.modules.guest_calc import GuestCalculator
 from supramatch.modules.hg_match import MatchingEngine
+from supramatch.utils.helpers import format_volume, format_price, format_packing_coefficient
 
 __all__ = [
     "__version__",
@@ -33,4 +34,7 @@ __all__ = [
     "CageCalculator",
     "GuestCalculator",
     "MatchingEngine",
+    "format_volume",
+    "format_price",
+    "format_packing_coefficient",
 ]
