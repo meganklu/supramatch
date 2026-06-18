@@ -38,7 +38,7 @@ GUEST_CALC_CONFIG = {
     "optimize_geometry": True,
 }
 
-MATCHER_CONFIG = {
+HG_MATCH_CONFIG = {
     "pc_min_default": 0.3,
     "pc_max_default": 0.7,
     "viable_threshold": True,

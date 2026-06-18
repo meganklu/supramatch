@@ -19,7 +19,7 @@ from supramatch.db.database import init_db, get_session, close_session
 from supramatch.db.models import Cage, Guest, HostGuestPairing
 from supramatch.modules.cage_calc import CageCalculator
 from supramatch.modules.guest_calc import GuestCalculator
-from supramatch.modules.matcher import MatchingEngine
+from supramatch.modules.hg_match import MatchingEngine
 
 __all__ = [
     "__version__",

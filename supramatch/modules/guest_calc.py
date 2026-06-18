@@ -1,5 +1,5 @@
 """
-Calculate and manage guest molecule properties in the database.
+Calculate guest properties, import from files, and manage database operations.
     
 Volumes calculated from SMILES using RDKit's ComputeMolVolume()
 """
@@ -24,6 +24,12 @@ class GuestCalculator:
     
     def __init__(self):
         self.session = get_session()
+
+        # Load config parameters
+        self.random_seed = GUEST_CALC_CONFIG["random_seed"]
+        self.optimize_geometry = GUEST_CALC_CONFIG["optimize_geometry"]
+
+    # ==================== CALCULATIONS ====================
     
     def calculate_volume(self, smiles: str) -> float:
         """
@@ -57,14 +63,15 @@ class GuestCalculator:
             mol = Chem.AddHs(mol)
             
             # Embed molecule with 3D coordinates
-            conf_id = AllChem.EmbedMolecule(mol, randomSeed=0xf00d)
+            conf_id = AllChem.EmbedMolecule(mol, randomSeed=self.random_seed)
             
             if conf_id == -1:
                 # Fallback for difficult molecules
                 AllChem.EmbedMolecule(mol, AllChem.ETKDG())
             
             # Optimize geometry
-            AllChem.MMFFOptimizeMolecule(mol)
+            if self.optimize_geometry:
+                AllChem.MMFFOptimizeMolecule(mol)
             
             # Calculate volume (in cubic angstroms)
             volume = AllChem.ComputeMolVolume(mol)

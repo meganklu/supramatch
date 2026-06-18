@@ -27,7 +27,14 @@ class MatchingEngine:
     
     def __init__(self):
         self.session = get_session()
+        
+        # Load config parameters
+        self.pc_min_default = HG_MATCH_CONFIG["pc_min_default"]
+        self.pc_max_default = HG_MATCH_CONFIG["pc_max_default"]
+        self.viable_threshold = HG_MATCH_CONFIG["viable_threshold"]
     
+    # ==================== CALCULATIONS ====================
+
     def calculate_packing_coefficient(
         self,
         cage_volume: float,
@@ -53,6 +60,8 @@ class MatchingEngine:
         
         return min(pc, 1.0)  # Cap at 1.0
     
+    # ==================== DATABASE OPERATIONS ====================
+
     def create_pairing(
         self,
         cage_id: int,
@@ -92,8 +101,11 @@ class MatchingEngine:
         # Calculate packing coefficient
         pc = self.calculate_packing_coefficient(cage.cavity_volume, guest.molecular_volume)
         
-        # Determine viability (default: optimal range 0.3-0.7)
-        is_viable = 0.3 <= pc <= 0.7
+        # Determine viability (default: optimal range 0.3-0.7, config viability threshold)
+        if self.viable_threshold:
+            is_viable = self.pc_min_default <= pc <= self.pc_max_default
+        else:
+            is_viable = True
         
         pairing = HostGuestPairing(
             cage_id=cage_id,
@@ -110,8 +122,8 @@ class MatchingEngine:
     def match_guests_to_cage(
         self,
         cage_id: int,
-        pc_min: float = 0.3,
-        pc_max: float = 0.7,
+        pc_min: float = None,
+        pc_max: float = None,
         max_price: float = None,
         min_price: float = None,
         only_viable: bool = True,
@@ -153,6 +165,12 @@ class MatchingEngine:
             >>> for pairing in matches:
             ...     print(f"{pairing.guest.name}: {pairing.quality_score:.1f}/100")
         """
+        # Use defaults from config if not provided
+        if pc_min is None:
+            pc_min = self.pc_min_default
+        if pc_max is None:
+            pc_max = self.pc_max_default
+
         cage = self.session.get(Cage, cage_id)
         
         if not cage:
@@ -279,7 +297,7 @@ def main(args):
     CLI interface for matching.
     
     Usage:
-        python -m supramatch.modules.matcher <cage_id> <command> [--pc-min 0.3] [--pc-max 0.7] 
+        python -m supramatch.modules.hg_match <cage_id> <command> [--pc-min 0.3] [--pc-max 0.7] 
                              [--max-price 5.0] [--min_price 1.0] [--sort quality_score] [--limit 10]
     
     Command Options:
@@ -292,12 +310,12 @@ def main(args):
         - price: Cost per gram
     
     Example:
-        python -m supramatch.modules.matcher 1 create
-        python -m supramatch.modules.matcher 1 match --sort quality_score --limit 10
-        python -m supramatch.modules.matcher 1 match --pc-min 0.3 --pc-max 0.7 --max-price 5.0
+        python -m supramatch.modules.hg_match 1 create
+        python -m supramatch.modules.hg_match 1 match --sort quality_score --limit 10
+        python -m supramatch.modules.hg_match 1 match --pc-min 0.3 --pc-max 0.7 --max-price 5.0
     """
     if len(args) < 3:
-        print("Usage: python -m supramatch.modules.matcher <cage_id> <command> [options]", file=sys.stderr)
+        print("Usage: python -m supramatch.modules.hg_match <cage_id> <command> [options]", file=sys.stderr)
         return 1
     
     try:

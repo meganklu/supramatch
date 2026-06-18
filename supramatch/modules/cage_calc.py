@@ -22,9 +22,14 @@ class CageCalculator:
     
     def __init__(self):
         self.session = get_session()
-        self.grid_spacing = 0.5
-        self.distance_threshold_multiplier = 2.0
+        
+        # Load config parameters
+        self.grid_spacing = CAGE_CALC_CONFIG["grid_spacing"]
+        self.distance_threshold_multiplier = CAGE_CALC_CONFIG["distance_threshold_multiplier"]
+        self.min_distance_threshold = CAGE_CALC_CONFIG["min_distance_threshold"]
     
+    # ==================== CALCULATIONS ====================
+
     def calculate_volume(self, cage_pdb_file: str) -> float:
         """
         Calculates the volume of the cage cavity from a PDB file.
@@ -78,6 +83,8 @@ class CageCalculator:
         except Exception as e:
             raise ValueError(f"Failed to calculate cavity volume: {e}")
     
+    # ==================== UTILITIES ====================
+
     def extract_cage_name(self, cage_pdb_file: str) -> str:
         """
         Extracts cage name from PDB COMPND line.
@@ -100,6 +107,8 @@ class CageCalculator:
         
         return Path(cage_pdb_file).stem
     
+    # ==================== DATABASE OPERATIONS ====================
+
     def create_cage(
         self,
         pdb_file: str,
