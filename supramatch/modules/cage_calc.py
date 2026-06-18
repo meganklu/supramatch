@@ -1,13 +1,7 @@
-#!/usr/bin/env python
-
 """
-File: modules/cage_calc.py
-Author: Megan K. Lu
-Date: 06/16/2026
-Description: Calculate and manage cage cavity volumes in the database.
+Calculate and manage cage cavity volumes in the database.
 
-Volume Units:
-    All volumes are in cubic angstroms (Å³)
+Uses CageCavityCalc
 """
 
 import sys

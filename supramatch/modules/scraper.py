@@ -1,13 +1,12 @@
-"""
-Web scraping module for chemical data.
+#!/usr/bin/env python
 
-This module handles scraping supplier websites for chemical information.
-Currently placeholder for future implementation.
+"""
+Web scraping module for chemical data on supplier websites.
 
 Suppliers:
+    - Ambeed
     - Sigma-Aldrich
-    - ChemSpider
-    - PubChem
+    - Fisher Scientific
 """
 
 import logging
@@ -19,8 +18,6 @@ logger = logging.getLogger(__name__)
 class ChemicalScraper:
     """
     Scrape chemical information from online sources.
-    
-    Note: This is a placeholder for future implementation.
     """
     
     def __init__(self):

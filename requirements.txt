@@ -4,7 +4,6 @@ click>=8.0.0
 
 # Chemistry packages
 CageCavityCalc
-cirpy>=1.0.2
 
 # Molecular analysis
 openbabel-wheel>=3.1.1

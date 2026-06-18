@@ -2,12 +2,6 @@
 
 A Python program for matching host metal–organic cages to guest molecules based on packing coefficient and guest molecule price.
 
-## Requirements
-
-- **Python**: 3.12+
-- **Operating System**: Linux, macOS, or Windows
-- **Disk Space**: ~2 GB for conda environment
-
 ## Quick Start
 
 ### Installation

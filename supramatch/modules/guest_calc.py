@@ -1,15 +1,7 @@
-#!/usr/bin/env python
-
 """
-File: modules/guest_calc.py
-Author: Megan K. Lu
-Date: 06/17/2026
-Description: Calculate and manage guest molecule properties in the database.
-
-Volume Units:
-    All volumes are in cubic angstroms (Å³)
-    Calculated from SMILES using RDKit's ComputeMolVolume()
-    Represents the 3D volume of the molecule in space
+Calculate and manage guest molecule properties in the database.
+    
+Volumes calculated from SMILES using RDKit's ComputeMolVolume()
 """
 
 import sys

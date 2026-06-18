@@ -1,16 +1,10 @@
-#!/usr/bin/env python
-
 """
-File: modules/matcher.py
-Author: Megan K. Lu
-Date: 06/18/2026
-Description: Match guest molecules to host cages based on packing coefficient and price.
+Match guest molecules to host cages based on packing coefficient and price.
 
 Evaluation Criteria:
     - Packing Coefficient (PC): Geometric fit (0.3-0.7 optimal)
     - Price per Gram ($/g): Cost efficiency
     - Quality Score: Combined metric (0-100)
-    - Value Ratio: PC per dollar (higher is better)
 """
 
 import sys
