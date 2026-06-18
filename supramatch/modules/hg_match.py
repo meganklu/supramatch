@@ -214,7 +214,7 @@ class MatchingEngine:
         )
         
         if only_viable:
-            logger.debug(f"Filtering for viable guests}")
+            logger.debug("Filtering for viable guests")
             stmt = stmt.where(HostGuestPairing.is_viable == True)
         
         needs_guest_join = max_price is not None or min_price is not None
