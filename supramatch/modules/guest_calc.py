@@ -373,6 +373,7 @@ class GuestCalculator:
                 <guest>
                     <name>Benzene</name>
                     <smiles>c1ccccc1</smiles>
+                    <molar_mass>78.11<molar_mass>
                     <cas_number>71-43-2</cas_number>
                     <supplier>Sigma-Aldrich</supplier>
                     <price_per_gram>0.59</price_per_gram>
@@ -410,6 +411,7 @@ class GuestCalculator:
                     guest_data = {
                         'name': guest_elem.findtext('name', '').strip(),
                         'smiles': guest_elem.findtext('smiles', '').strip(),
+                        'molar_mass': self._parse_float(guest_elem.findtext('molar_mass')),
                         'cas_number': guest_elem.findtext('cas_number', '').strip() or None,
                         'supplier': guest_elem.findtext('supplier', '').strip() or None,
                         'price_per_gram': self._parse_float(guest_elem.findtext('price_per_gram')),
@@ -441,7 +443,7 @@ class GuestCalculator:
         Import guests from CSV file.
         
         Expected CSV columns:
-            name, smiles, cas_number, supplier, price_per_gram, physical_state, url
+            name, smiles, molar_mass, cas_number, supplier, price_per_gram, physical_state, url
         
         Args:
             csv_file: Path to CSV file
@@ -470,6 +472,7 @@ class GuestCalculator:
                         guest_data = {
                             'name': row.get('name', '').strip(),
                             'smiles': row.get('smiles', '').strip(),
+                            'molar_mass': self._parse_float(row.get('molar_mass')),
                             'cas_number': row.get('cas_number', '').strip() or None,
                             'supplier': row.get('supplier', '').strip() or None,
                             'price_per_gram': self._parse_float(row.get('price_per_gram')),
@@ -505,6 +508,7 @@ class GuestCalculator:
                 {
                     "name": "Benzene",
                     "smiles": "c1ccccc1",
+                    "molar_mass": 78.11,
                     "cas_number": "71-43-2",
                     "supplier": "Sigma-Aldrich",
                     "price_per_gram": 0.59,
@@ -546,6 +550,7 @@ class GuestCalculator:
                     guest = self.create_guest(
                         name=guest_data.get('name'),
                         smiles=guest_data.get('smiles'),
+                        molar_mass=guest_data.get('molar_mass'),
                         cas_number=guest_data.get('cas_number'),
                         supplier=guest_data.get('supplier'),
                         price_per_gram=guest_data.get('price_per_gram'),
@@ -610,88 +615,3 @@ class GuestCalculator:
             return float(value)
         except (ValueError, TypeError):
             return None
-
-def main(args):
-    """
-    CLI interface for guest calculations.
-    
-    Usage:
-        python -m supramatch.modules.guest_calc <smiles> [--name Benzene] [--mass 78.11] [--cas 71-43-2]
-                                                [--supplier Sigma-Aldrich] [--price 66.10] [--state liquid]
-                                                [--url https://www.sigmaaldrich.com/US/en/product/sial/401765?srsltid=AfmBOorEti16SKK4bnwJ6WVzfspI86AYKTrERWWSVn3sCkd3fbFlpADa]
-    
-    Examples:
-        python -m supramatch.modules.guest_calc c1ccccc1 --name Benzene --cas 71-43-2
-        python -m supramatch.modules.guest_calc "Br[C@]12C[C@@H]3C[C@H](C1)C[C@@](Br)(C3)C2" --name 1,3-Dibromoadamantane --cas 876-53-9 --price 75.75
-    """
-    if len(args) < 2:
-        logger.error("Missing required arguments")
-        print("Usage: python -m supramatch.modules.guest_calc <smiles> [options]", file=sys.stderr)
-        return 1
-    
-    smiles = args[1]
-    name = None
-    molar_mass = None
-    cas_number = None
-    supplier = None
-    price_per_gram = None
-    physical_state = None
-    url = None
-
-    i = 2
-    while i < len(args):
-        if args[i] == '--name':
-            name = args[i + 1]
-            i += 2
-        elif args[i] == '--mass':
-            molar_mass = float(args[i + 1])
-            i += 2
-        elif args[i] == '--cas':
-            cas_number = args[i + 1]
-            i += 2
-        elif args[i] == '--supplier':
-            supplier = args[i + 1]
-            i += 2
-        elif args[i] == '--price':
-            price_per_gram = float(args[i + 1])
-            i += 2
-        elif args[i] == '--state':
-            physical_state = args[i + 1]
-            i += 2
-        elif args[i] == '--url':
-            url = args[i + 1]
-            i += 2
-        else:
-            print(f"Warning: unknown option: {args[i]}")
-            i += 1
-    
-    logger.info(f"SMILES: {smiles}, Guest name: {name}, Molar mass: {molar_mass} g/mol, CAS: {cas_number}, Supplier: {supplier}, Price: {format_price(price_per_gram)}, Physical state: {physical_state}, URL: {url}")
-
-    calculator = GuestCalculator()
-    
-    try:
-        if not name:
-            # Just calculate properties without storing
-            molecular_volume = calculator.calculate_volume(smiles=smiles)
-            volume_str = format_volume(molecular_volume)
-            logger.info(f"Successfully calculated volume: {volume_str}")
-            print(f"Volume: {volume_str}")
-        else:
-            # Create guest in database
-            guest = calculator.create_guest(name, smiles, molar_mass, cas_number, supplier, price_per_gram, physical_state, url)
-            volume_str = format_volume(guest.molecular_volume)
-            logger.info(f"Successfully created guest: {guest.name}")
-            print(f"✓ Created guest '{guest.name}'")
-            print(f"  Volume: {volume_str}")
-        
-        calculator.close()
-        return 0
-    
-    except Exception as e:
-        logger.error(f"Error creating guest: {e}", exc_info=True)
-        print(f"Error: {e}", file=sys.stderr)
-        calculator.close()
-        return 1
-
-if __name__ == "__main__":
-    sys.exit(main(sys.argv))

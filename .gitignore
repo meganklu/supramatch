@@ -58,3 +58,9 @@ site/
 # OS
 .DS_Store
 Thumbs.db
+
+# CLI cache
+__pycache__/
+*.egg-info/
+dist/
+build/

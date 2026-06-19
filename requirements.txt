@@ -1,6 +1,9 @@
 # Core dependencies
 sqlalchemy>=2.0.0
+
+# CLI Usage
 click>=8.0.0
+click-spinner>=0.1.10
 
 # Chemistry packages
 CageCavityCalc

@@ -170,16 +170,20 @@ def drop_all_tables() -> None:
         >>> from supramatch.db import drop_all_tables
         >>> drop_all_tables()
     """
-    confirm = input(
-        "Are you sure you want to drop all tables? "
-        "This is irreversible. Type 'yes' to confirm: "
-    )
+    # Confirmation in CLI
+    # confirm = input(
+    #     "Are you sure you want to drop all tables? "
+    #     "This is irreversible. Type 'yes' to confirm: "
+    # )
     
-    if confirm.lower() == "yes":
-        Base.metadata.drop_all(bind=engine)
-        logger.warning("All tables dropped from database")
-    else:
-        logger.info("Drop operation cancelled")
+    # if confirm.lower() == "yes":
+    #     Base.metadata.drop_all(bind=engine)
+    #     logger.warning("All tables dropped from database")
+    # else:
+    #     logger.info("Drop operation cancelled")
+
+    Base.metadata.drop_all(bind=engine)
+    #     logger.warning("All tables dropped from database")
 
 
 def reset_db() -> None:
@@ -225,57 +229,3 @@ def vacuum_db() -> None:
     
     except Exception as e:
         logger.error(f"Vacuum failed: {e}")
-
-
-def main(args):
-    """
-    CLI entry point for database initialization.
-    
-    Usage:
-        python -m supramatch.db.database [command]
-    
-    Command Options:
-        - init: Initialize database (create tables)
-        - reset: Reset database (drop and recreate)
-        - drop: Drop all tables
-        - help: Show help message
-    
-    Example:
-        python -m supramatch.db.database init
-    """
-    
-    if len(sys.argv) > 1:
-        command = sys.argv[1].lower()
-        
-        if command == "init":
-            init_db()
-            print("✓ Database initialized successfully")
-        elif command == "reset":
-            reset_db()
-            print("✓ Database reset successfully")
-        elif command == "drop":
-            drop_all_tables()
-            print("✓ All tables dropped")
-        elif command == "help":
-            print("Usage: python -m supramatch.db.database [command]")
-            print("\nCommands:")
-            print("    - init: Initialize database (create tables)")
-            print("    - reset: Reset database (drop and recreate)")
-            print("    - drop: Drop all tables")
-            print("    - help: Show this help message")
-        else:
-            print(f"Unknown command: {command}")
-            print("Use 'help' for available commands")
-            return 1
-    else:
-        # Default: initialize database
-        init_db()
-        print("✓ Database initialized successfully")
-    return 0
-
-# Cleanup on exit
-import atexit
-atexit.register(close_session)
-
-if __name__ == "__main__":
-    sys.exit(main(sys.argv))

@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Web scraping module for chemical data on supplier websites.
 
