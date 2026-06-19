@@ -12,10 +12,14 @@ Example environment variables:
 """
 
 import os
+from dotenv import load_dotenv
 from pathlib import Path
 
 # Project root
 PROJECT_ROOT = Path(__file__).parent.parent
+
+# Find and load the .env file
+load_dotenv()
 
 # ==================== DATABASE ====================
 

@@ -12,9 +12,9 @@ import logging
 from pathlib import Path
 from typing import List, Optional
 from sqlalchemy import desc, asc, select, func
-from ..db.models import Guest
-from ..db.models import Cage, Guest, HostGuestPairing
-from ..db.database import get_session
+from supramatch.db.models import Guest
+from supramatch.db.models import Cage, Guest, HostGuestPairing
+from supramatch.db.database import get_session
 from supramatch.config import HG_MATCH_CONFIG
 from supramatch.utils.helpers import format_volume, format_price, format_packing_coefficient
 
