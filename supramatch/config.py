@@ -8,7 +8,7 @@ Example environment variables:
     export LOG_LEVEL="DEBUG"
     export CAGE_GRID_SPACING="0.3"
     export GUEST_RANDOM_SEED="12345"
-    export PC_MIN_DEFAULT="0.25"
+    export PC_IDEAL_DEFAULT="0.45"
 """
 
 import os
@@ -62,11 +62,11 @@ GUEST_CALC_CONFIG = {
 # ==================== HOST-GUEST MATCHING ====================
 
 HG_MATCH_CONFIG = {
-    # Default minimum packing coefficient for viable matches
-    "pc_min_default": float(os.getenv("PC_MIN_DEFAULT", "0.3")),
+    # Default ideal packing coefficient for viable matches
+    "pc_ideal_default": float(os.getenv("PC_IDEAL_DEFAULT", "0.55")),
     
-    # Default maximum packing coefficient for viable matches
-    "pc_max_default": float(os.getenv("PC_MAX_DEFAULT", "0.7")),
+    # Default packing coefficient tolerance for viable matches
+    "pc_tolerance_default": float(os.getenv("PC_TOLERANCE_DEFAULT", "0.09")),
     
     # Whether to apply viability threshold when creating pairings
     "viable_threshold": os.getenv("VIABLE_THRESHOLD", "true").lower() == "true",

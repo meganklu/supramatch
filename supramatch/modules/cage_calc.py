@@ -238,7 +238,7 @@ class CageCalculator:
         logger.debug("Retrieving all cages from database")
         stmt = select(Cage)
         cages = self.session.scalars(stmt).all()
-        logger.info(f"Found {len(cages)} cages in database")
+        logger.info(f"Found {len(cages)} cage(s) in database")
         return cages
     
     def update_cage_volume(self, cage_id: int, recalculate: bool = False) -> Optional[float]:

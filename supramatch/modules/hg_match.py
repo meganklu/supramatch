@@ -2,7 +2,7 @@
 Match guest molecules to host cages based on packing coefficient and price.
 
 Evaluation Criteria:
-    - Packing Coefficient (PC): Geometric fit (0.3-0.7 optimal)
+    - Packing Coefficient (PC): Geometric fit (0.55 ± 0.09 optimal)
     - Price per Gram ($/g): Cost efficiency
     - Quality Score: Combined metric (0-100)
 """
@@ -11,7 +11,7 @@ import sys
 import logging
 from pathlib import Path
 from typing import List, Optional
-from sqlalchemy import desc, asc, select
+from sqlalchemy import desc, asc, select, func
 from ..db.models import Guest
 from ..db.models import Cage, Guest, HostGuestPairing
 from ..db.database import get_session
@@ -33,14 +33,14 @@ class MatchingEngine:
         self.session = get_session()
         
         # Load config parameters
-        self.pc_min_default = HG_MATCH_CONFIG["pc_min_default"]
-        self.pc_max_default = HG_MATCH_CONFIG["pc_max_default"]
+        self.pc_ideal_default = HG_MATCH_CONFIG["pc_ideal_default"]
+        self.pc_tolerance_default = HG_MATCH_CONFIG["pc_tolerance_default"]
         self.viable_threshold = HG_MATCH_CONFIG["viable_threshold"]
 
         logger.debug(
             f"MatchingEngine initialized with config: "
-            f"pc_min={self.pc_min_default}, "
-            f"pc_max={self.pc_max_default}, "
+            f"pc_ideal_default={self.pc_ideal_default}, "
+            f"pc_tolerance_default={self.pc_tolerance_default}, "
             f"viable_threshold={self.viable_threshold}"
         )
     
@@ -75,6 +75,56 @@ class MatchingEngine:
         pc_str = format_packing_coefficient(pc)
         logger.info(f"Calculated packing coefficent: {pc_str}")
         return pc  # Cap at 1.0
+
+    def calculate_quality_score(
+        self,
+        packing_coefficient: float,
+        guest_price: float
+    ) -> float:
+        """
+        Calculate quality score for a host-guest pair (0-100).
+        
+        Balances two factors:
+        1. Geometric fit (packing coefficient): 0-50 points
+           - Optimal range 0.55 ± 0.09 gets full points
+           - Outside this range score decreases
+        
+        2. Cost efficiency (price per gram): 0-50 points
+           - Lower price = higher score
+           - Assumes typical range $0.10-$100.00/g
+        
+        Args:
+            packing_coefficient: Volume ratio (0–1)
+            guest_price: Cost in USD per gram ($/g)
+
+        Returns:
+            float: Quality score (0-100), higher is better
+
+        Raises:
+            ValueError: If packing coefficient or price are invalid.
+        """
+        logger.debug(f"Calculating quality score: packing_coefficient={packing_coefficient}, guest_price={guest_price}")
+
+        # PC score: optimal at 0.55 ± 0.09
+        if abs(packing_coefficient - self.pc_ideal_default) <= self.pc_tolerance_default:
+            # Full points in optimal range
+            pc_score = 50
+        else:
+            # Scale based on amount outside of ideal range
+            pc_score = 50 - (abs(packing_coefficient - self.pc_ideal_default) * 100) 
+        
+        # Price score: lower price = higher score
+        if guest_price:
+            # Normalize on typical range $0.10-$100.00/g
+            # At $0.10/g = ~50 points
+            # At $10.00/g = 45 points
+            # At $100.00/g = 0 points
+            # Formula: 50 - (price * 0.5)
+            price_score = max(0, 50 - (guest_price * 0.5))
+        else:
+            price_score = 25  # Neutral if no price
+        
+        return pc_score + price_score
     
     # ==================== DATABASE OPERATIONS ====================
 
@@ -122,9 +172,13 @@ class MatchingEngine:
         pc_str = format_packing_coefficient(pc)
         logger.debug(f"Packing coefficient calculated: {pc_str}")
 
-        # Determine viability (default: optimal range 0.3-0.7, config viability threshold)
+        # Calculate quality score
+        quality_score = self.calculate_quality_score(pc, guest.price_per_gram)
+        logger.debug(f"Quality score calculated: {quality_score}")
+
+        # Determine viability (default: optimal range 0.55 ± 0.09, config viability threshold)
         if self.viable_threshold:
-            is_viable = self.pc_min_default <= pc <= self.pc_max_default
+            is_viable = abs(pc - self.pc_ideal_default) <= self.pc_tolerance_default
         else:
             is_viable = True
         logger.debug(f"Pairing viable: {is_viable}")
@@ -133,20 +187,21 @@ class MatchingEngine:
             cage_id=cage_id,
             guest_id=guest_id,
             packing_coefficient=pc,
+            quality_score=quality_score,
             is_viable=is_viable
         )
         
         self.session.add(pairing)
         self.session.commit()
         
-        logger.info(f"Created pairing: {cage.name} + {guest.name} (PC={pc_str})")
+        logger.info(f"Created pairing: {cage.name} + {guest.name} (PC={pc_str}, quality={quality_score})")
         return pairing
     
     def match_guests_to_cage(
         self,
         cage_id: int,
-        pc_min: float = None,
-        pc_max: float = None,
+        pc_ideal: float = None,
+        pc_tolerance: float = None,
         max_price: float = None,
         min_price: float = None,
         only_viable: bool = True,
@@ -158,14 +213,14 @@ class MatchingEngine:
         
         Args:
             cage_id: Cage ID.
-            pc_min: Minimum packing coefficient.
-            pc_max: Maximum packing coefficient.
+            pc_ideal: Ideal packing coefficient.
+            pc_tolerance: Packing coefficient range tolerance.
             max_price: Maximum guest price per gram ($/g).
             min_price: Minimum guest price per gram ($/g).
             only_viable: Only return pairings marked as viable.
             sort_by: Sort key:
-                - 'quality_score': Combined metric (default)
-                - 'packing_coefficient': Geometric fit
+                - 'quality_score': Combined metric (descending) (default)
+                - 'packing_coefficient': Geometric fit (closest to ideal packing coefficient)
                 - 'price': Cost per gram (ascending)
             limit: Maximum number of results.
         
@@ -179,8 +234,8 @@ class MatchingEngine:
             >>> engine = MatchingEngine()
             >>> matches = engine.match_guests_to_cage(
             ...     cage_id=1,
-            ...     pc_min=0.3,
-            ...     pc_max=0.7,
+            ...     pc_ideal=0.55,
+            ...     pc_tolerance=0.09,
             ...     max_price=5.0,
             ...     sort_by='quality_score',
             ...     limit=10
@@ -189,15 +244,15 @@ class MatchingEngine:
             ...     print(f"{pairing.guest.name}: {pairing.quality_score:.1f}/100")
         """
         logger.info(f"Finding matches for cage_id={cage_id}")
-        logger.debug(f"Filters: pc_min={pc_min}, pc_max={pc_max}, max_price={max_price}, min_price={min_price}, only_viable={only_viable}, sort_by={sort_by}, limit={limit}")
+        logger.debug(f"Filters: pc_ideal={pc_ideal}, pc_tolerance={pc_tolerance}, max_price={max_price}, min_price={min_price}, only_viable={only_viable}, sort_by={sort_by}, limit={limit}")
 
         # Use defaults from config if not provided
-        if pc_min is None:
-            pc_min = self.pc_min_default
-            logger.debug(f"Packing coefficient minimum set to: {format_packing_coefficient(pc_min)}")
-        if pc_max is None:
-            pc_max = self.pc_max_default
-            logger.debug(f"Packing coefficient maximum set to: {format_packing_coefficient(pc_max)}")
+        if pc_ideal is None:
+            pc_ideal = self.pc_ideal_default
+            logger.debug(f"Ideal packing coefficient set to: {format_packing_coefficient(pc_ideal)}")
+        if pc_tolerance is None:
+            pc_tolerance = self.pc_tolerance_default
+            logger.debug(f"Packing coefficient tolerance set to: {format_packing_coefficient(pc_tolerance)}")
 
         cage = self.session.get(Cage, cage_id)
         
@@ -206,18 +261,17 @@ class MatchingEngine:
             raise ValueError(f"Cage with ID {cage_id} not found")
         
         # Build query
-        logger.debug(f"Filtering for cage_id={cage_id}, pc_min={pc_min}, pc_max={pc_max}")
+        logger.debug(f"Filtering for cage_id={cage_id}, pc_ideal={pc_ideal}, pc_tolerance={pc_tolerance}")
         stmt = select(HostGuestPairing).where(
             HostGuestPairing.cage_id == cage_id,
-            HostGuestPairing.packing_coefficient >= pc_min,
-            HostGuestPairing.packing_coefficient <= pc_max
+            func.abs(HostGuestPairing.packing_coefficient - pc_ideal) <= pc_tolerance
         )
         
         if only_viable:
             logger.debug("Filtering for viable guests")
             stmt = stmt.where(HostGuestPairing.is_viable == True)
         
-        needs_guest_join = max_price is not None or min_price is not None
+        needs_guest_join = max_price is not None or min_price is not None or sort_by == 'price'
         if needs_guest_join:
             stmt = stmt.join(Guest)
         
@@ -228,25 +282,25 @@ class MatchingEngine:
             if min_price is not None:
                 logger.debug(f"Filtering for min_price={min_price}")
                 stmt = stmt.where(Guest.price_per_gram >= min_price)
-    
-        pairings = self.session.scalars(stmt).all()
 
         # Apply sorting
         if sort_by == 'quality_score':
             logger.debug(f"Sorting by quality_score")
-            pairings.sort(key=lambda p: p.quality_score, reverse=True)
+            stmt = stmt.order_by(HostGuestPairing.quality_score.desc())
         elif sort_by == 'packing_coefficient':
             logger.debug(f"Sorting by packing_coefficient")
-            pairings.sort(key=lambda p: p.packing_coefficient, reverse=True)
+            stmt = stmt.order_by(func.abs(HostGuestPairing.packing_coefficient - pc_ideal).asc())
         elif sort_by == 'price':
             logger.debug(f"Sorting by price")
-            pairings.sort(key=lambda p: p.guest.price_per_gram if p.guest.price_per_gram else float('inf'))
+            stmt = stmt.order_by(Guest.price_per_gram.asc().nulls_last())
         
+        pairings = self.session.scalars(stmt).all()
+
         if limit:
             logger.debug(f"Limiting pairings to {limit}")
             pairings = pairings[:limit]
 
-        logger.info(f"Found {len(pairings)} matches for {cage.name}")
+        logger.info(f"Found {len(pairings)} match(es) for {cage.name}")
 
         return pairings
     

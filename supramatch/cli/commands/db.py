@@ -128,12 +128,12 @@ def status():
             pairing_count = session.scalar(select(func.count()).select_from(HostGuestPairing))
         
         click.echo("\nDatabase Status:")
-        click.echo(f"  Cages: {cage_count}")
-        click.echo(f"  Guests: {guest_count}")
-        click.echo(f"  Pairings: {pairing_count}")
+        click.echo(f"  Cage(s): {cage_count}")
+        click.echo(f"  Guest(s): {guest_count}")
+        click.echo(f"  Pairing(s): {pairing_count}")
         click.echo()
         
-        logger.info(f"Database status: {cage_count} cages, {guest_count} guests, {pairing_count} pairings")
+        logger.info(f"Database status: {cage_count} cage(s), {guest_count} guest(s), {pairing_count} pairing(s)")
     
     except Exception as e:
         click.secho(f"✗ Error: {e}", fg="red", err=True)

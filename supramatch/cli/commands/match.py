@@ -7,20 +7,21 @@ Usage:
     supramatch match find <cage_id> [OPTIONS]
 
 Options:
-    --pc-min MIN         Minimum packing coefficient (default: 0.3)
-    --pc-max MAX         Maximum packing coefficient (default: 0.7)
+    --pc-ideal IDEAL     Ideal packing coefficient (default: 0.55)
+    --pc-tolerance TOL   Packing coefficient range tolerance (default: 0.09)
     --max-price PRICE    Maximum guest price in $/g
     --min-price PRICE    Minimum guest price in $/g
-    --sort METRIC        Sort by: quality_score, packing_coefficient, price, value_ratio
+    --sort METRIC        Sort by: quality_score, packing_coefficient, price
+    --only-viable        Only show pairings marked as viable
     --limit N            Maximum number of results to display (default: 20)
 
 Examples:
     supramatch match create 1
     supramatch match info 1
     supramatch match find 1
-    supramatch match find 1 --pc-min 0.3 --pc-max 0.7 --limit 10
+    supramatch match find 1 --pc-ideal 0.5 --pc-tolerance 0.1 --limit 10
     supramatch match find 1 --sort price --max-price 5.0
-    supramatch match find 1 --sort value_ratio
+    supramatch match find 1 --sort price
 """
 
 import click
@@ -30,6 +31,7 @@ from typing import Optional
 from supramatch.db.database import init_db
 from supramatch.modules.hg_match import MatchingEngine
 from supramatch.db.models import Cage
+from supramatch.config import HG_MATCH_CONFIG
 from supramatch.utils.helpers import format_volume, format_price, format_packing_coefficient
 
 logger = logging.getLogger(__name__)
@@ -48,7 +50,7 @@ def match_group():
 
 @match_group.command()
 @click.argument('cage_id', type=int)
-@click.option('--guest-ids', default=None, help='Comma-separated list of guest IDs (if not provided, uses all guests)')
+@click.option('--guest-ids', '-g', default=None, help='Comma-separated list of guest IDs (if not provided, uses all guests)')
 def create(cage_id: int, guest_ids: Optional[str]):
     """
     Create pairings between a cage and guests.
@@ -78,7 +80,7 @@ def create(cage_id: int, guest_ids: Optional[str]):
                 raise click.Abort()
         
         # Verify cage exists
-        cage = engine.session.query(Cage).get(cage_id)
+        cage = engine.session.get(Cage, cage_id)
         if not cage:
             click.secho(f"✗ Cage {cage_id} not found", fg="red", err=True)
             logger.error(f"Cage {cage_id} not found")
@@ -138,7 +140,7 @@ def info(cage_id: int):
     engine = MatchingEngine()
     
     try:
-        cage = engine.session.query(Cage).get(cage_id)
+        cage = engine.session.get(Cage, cage_id)
         
         if not cage:
             click.secho(f"✗ Cage {cage_id} not found", fg="red", err=True)
@@ -159,12 +161,15 @@ def info(cage_id: int):
         pcs = [p.packing_coefficient for p in pairings]
         prices = [p.guest.price_per_gram for p in pairings if p.guest.price_per_gram]
         scores = [p.quality_score for p in pairings]
-        
-        optimal_count = sum(1 for pc in pcs if 0.3 <= pc <= 0.7)
+
+        pc_ideal_default = HG_MATCH_CONFIG["pc_ideal_default"]
+        pc_tolerance_default = HG_MATCH_CONFIG["pc_tolerance_default"]
+
+        optimal_count = sum(1 for pc in pcs if abs(pc - pc_ideal_default) <= pc_tolerance_default)
         
         click.echo(f"\nMatch Information for Cage '{cage.name}':\n")
         click.echo(f"  Total Pairings: {len(pairings)}")
-        click.echo(f"  Optimal Fit (0.3-0.7): {optimal_count}")
+        click.echo(f"  Optimal Fit ({pc_ideal_default} ± {pc_tolerance_default}): {optimal_count}")
         
         if pcs:
             click.echo(f"\nPacking Coefficient:")
@@ -199,18 +204,19 @@ def info(cage_id: int):
 
 @match_group.command()
 @click.argument('cage_id', type=int)
-@click.option('--pc-min', default=0.3, type=float, help='Minimum packing coefficient')
-@click.option('--pc-max', default=0.7, type=float, help='Maximum packing coefficient')
+@click.option('--pc-ideal', '-i', default=HG_MATCH_CONFIG["pc_ideal_default"], type=float, help='Ideal packing coefficient')
+@click.option('--pc-tolerance', '-t', default=HG_MATCH_CONFIG["pc_tolerance_default"], type=float, help='Packing coefficient tolerance range')
 @click.option('--max-price', default=None, type=float, help='Maximum guest price ($/g)')
 @click.option('--min-price', default=None, type=float, help='Minimum guest price ($/g)')
+@click.option('--only-viable', '-o', is_flag=True, help='Only show pairings marked as viable')
 @click.option(
-    '--sort',
+    '--sort', '-s',
     default='quality_score',
     type=click.Choice(['quality_score', 'packing_coefficient', 'price']),
     help='Sort results by metric'
 )
-@click.option('--limit', default=20, type=int, help='Maximum number of results')
-def find(cage_id: int, pc_min: float, pc_max: float, max_price: Optional[float], min_price: Optional[float], sort: str, limit: int):
+@click.option('--limit', '-l', default=20, type=int, help='Maximum number of results')
+def find(cage_id: int, pc_ideal: float, pc_tolerance: float, max_price: Optional[float], min_price: Optional[float], only_viable: bool, sort: str, limit: int):
     """
     Find best guest matches for a cage.
     
@@ -225,13 +231,13 @@ def find(cage_id: int, pc_min: float, pc_max: float, max_price: Optional[float],
     
     Example:
         supramatch match 1
-        supramatch match 1 --pc-min 0.3 --pc-max 0.7 --limit 10
+        supramatch match 1 --pc-ideal 0.3 --pc-tolerance 0.7 --limit 10
         supramatch match 1 --sort price --max-price 5.0
         supramatch match 1 --sort price
     """
     logger.info(
-        f"Finding matches for cage {cage_id}: pc={pc_min}-{pc_max}, "
-        f"price=${min_price}-${max_price}, sort={sort}, limit={limit}"
+        f"Finding matches for cage {cage_id}: pc={pc_ideal} ± {pc_tolerance}, "
+        f"price=${min_price}–${max_price}, only_viable={only_viable}, sort={sort}, limit={limit}"
     )
     init_db()
     
@@ -242,10 +248,11 @@ def find(cage_id: int, pc_min: float, pc_max: float, max_price: Optional[float],
             click.echo("Finding matches...")
             matches = engine.match_guests_to_cage(
                 cage_id=cage_id,
-                pc_min=pc_min,
-                pc_max=pc_max,
+                pc_ideal=pc_ideal,
+                pc_tolerance=pc_tolerance,
                 max_price=max_price,
                 min_price=min_price,
+                only_viable=only_viable,
                 sort_by=sort,
                 limit=limit
             )
@@ -257,7 +264,7 @@ def find(cage_id: int, pc_min: float, pc_max: float, max_price: Optional[float],
         
         cage = engine.session.get(Cage, cage_id)
 
-        click.echo(f"\nMatches for cage '{cage.name}' ({format_volume(cage.cavity_volume)}):\n")
+        click.echo(f"\nMatch(es) for cage '{cage.name}' ({format_volume(cage.cavity_volume)}):\n")
         click.echo(f"{'#':<4} {'Guest Name':<25} {'PC':>8} {'$/g':>10} {'Score':>8}")
         click.echo("-" * 95)
         
@@ -267,13 +274,13 @@ def find(cage_id: int, pc_min: float, pc_max: float, max_price: Optional[float],
             pc_str = format_packing_coefficient(pairing.packing_coefficient)
             price_str = format_price(guest.price_per_gram)
 
-            # Color code by fit
-            if pairing.packing_coefficient < 0.3:
-                fit_color = 'yellow'
-            elif pairing.packing_coefficient <= 0.7:
-                fit_color = 'green'
-            else:
-                fit_color = 'red'
+            # Color code by fit (only selects within range so coloring)
+            # if abs(pairing.packing_coefficient - pc_ideal) <= pc_tolerance:
+            #     fit_color = 'green'
+            # elif abs(pairing.packing_coefficient - pc_ideal) <= pc_tolerance * 1.5:
+            #     fit_color = 'yellow'
+            # else:
+            #     fit_color = 'red'
             
             click.echo(
                 f"{idx:<4} "
@@ -284,7 +291,7 @@ def find(cage_id: int, pc_min: float, pc_max: float, max_price: Optional[float],
             )
         
         click.echo()
-        logger.info(f"Found {len(matches)} matches for cage {cage_id}")
+        logger.info(f"Found {len(matches)} match(es) for cage {cage_id}")
     
     except ValueError as e:
         click.secho(f"✗ Error: {e}", fg="red", err=True)

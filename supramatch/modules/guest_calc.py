@@ -270,7 +270,7 @@ class GuestCalculator:
             stmt = stmt.limit(limit)
         
         guests = self.session.scalars(stmt).all()
-        logger.info(f"Found {len(guests)} guests in database")
+        logger.info(f"Found {len(guests)} guest(s) in database")
         return guests
     
     def update_guest_price(self, guest_id: int, new_price_per_gram: float) -> bool:
@@ -431,7 +431,7 @@ class GuestCalculator:
                     logger.warning(f"Failed to create guest from XML: {e}")
                     continue
             
-            logger.info(f"Imported {len(created_guests)} guests from XML")
+            logger.info(f"Imported {len(created_guests)} guest(s) from XML")
             return created_guests
         
         except ET.ParseError as e:
@@ -492,7 +492,7 @@ class GuestCalculator:
                         logger.warning(f"Row {row_num}: Failed to create guest: {e}")
                         continue
             
-            logger.info(f"Imported {len(created_guests)} guests from CSV")
+            logger.info(f"Imported {len(created_guests)} guest(s) from CSV")
             return created_guests
         
         except csv.Error as e:
@@ -563,7 +563,7 @@ class GuestCalculator:
                     logger.warning(f"Failed to create guest from JSON: {e}")
                     continue
             
-            logger.info(f"Imported {len(created_guests)} guests from JSON")
+            logger.info(f"Imported {len(created_guests)} guest(s) from JSON")
             return created_guests
         
         except json.JSONDecodeError as e:

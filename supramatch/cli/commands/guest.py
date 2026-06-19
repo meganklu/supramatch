@@ -185,10 +185,10 @@ def import_guests(file: str):
             click.echo("Importing guests...")
             guests = calc.import_from_file(file)
         
-        click.secho(f"✓ Imported {len(guests)} guests", fg="green")
+        click.secho(f"✓ Imported {len(guests)} guest(s)", fg="green")
         
         if guests:
-            click.echo("\nImported guests:")
+            click.echo("\nImported guest(s):")
             click.echo(f"{'Name':<30} {'Volume':<15} {'Price':<15}")
             click.echo("-" * 60)
             
@@ -200,7 +200,7 @@ def import_guests(file: str):
             if len(guests) > 10:
                 click.echo(f"... and {len(guests) - 10} more")
         
-        logger.info(f"Successfully imported {len(guests)} guests")
+        logger.info(f"Successfully imported {len(guests)} guest(s)")
     
     except FileNotFoundError as e:
         click.secho(f"✗ Error: {e}", fg="red", err=True)
@@ -217,8 +217,8 @@ def import_guests(file: str):
 
 
 @guest_group.command()
-@click.option('--supplier', default=None, help='Filter by supplier name')
-@click.option('--limit', default=20, type=int, help='Maximum number of guests to display')
+@click.option('--supplier', '-s', default=None, help='Filter by supplier name')
+@click.option('--limit', '-l', default=20, type=int, help='Maximum number of guests to display')
 def list(supplier: Optional[str], limit: int):
     """
     List guests in database.
@@ -228,7 +228,7 @@ def list(supplier: Optional[str], limit: int):
         supramatch guest list --supplier "Sigma-Aldrich"
         supramatch guest list --limit 50
     """
-    logger.info(f"Listing guests: supplier={supplier}, limit={limit}")
+    logger.info(f"Listing guest(s): supplier={supplier}, limit={limit}")
     init_db()
     
     calc = GuestCalculator()
@@ -244,7 +244,7 @@ def list(supplier: Optional[str], limit: int):
             logger.info("No guests found")
             return
         
-        click.echo(f"\nFound {len(guests)} guests:\n")
+        click.echo(f"\nFound {len(guests)} guest(s):\n")
         click.echo(f"{'ID':<5} {'Name':<25} {'Volume':<15} {'Price':<12} {'Supplier'}")
         click.echo("-" * 80)
         
@@ -264,7 +264,7 @@ def list(supplier: Optional[str], limit: int):
         if len(guests) > limit:
             click.echo(f"\n... and {len(guests) - limit} more (use --limit to see more)")
         
-        logger.info(f"Listed {min(len(guests), limit)} guests")
+        logger.info(f"Listed {min(len(guests), limit)} guest(s)")
     
     finally:
         calc.close()
@@ -308,7 +308,7 @@ def search(query: str):
                 f"{price_str:<12}"
             )
         
-        logger.info(f"Found {len(guests)} matches")
+        logger.info(f"Found {len(guests)} match(es)")
     
     finally:
         calc.close()

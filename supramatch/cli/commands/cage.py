@@ -85,7 +85,7 @@ def load(pdb_file: str, name: Optional[str], cas: Optional[str]):
 
 
 @cage_group.command()
-@click.option('--limit', default=None, type=int, help='Maximum number of cages to display')
+@click.option('--limit', '-l', default=None, type=int, help='Maximum number of cages to display')
 def list(limit: Optional[int]):
     """
     List all cages in database.
@@ -94,7 +94,7 @@ def list(limit: Optional[int]):
         supramatch cage list
         supramatch cage list --limit 10
     """
-    logger.info("Listing cages from database")
+    logger.info("Listing cage(s) from database")
     init_db()
     
     calculator = CageCalculator()
@@ -110,7 +110,7 @@ def list(limit: Optional[int]):
         if limit:
             cages = cages[:limit]
         
-        click.echo(f"\nFound {len(cages)} cages:\n")
+        click.echo(f"\nFound {len(cages)} cage(s):\n")
         click.echo(f"{'ID':<5} {'Name':<25} {'Volume':<15} {'PDB File'}")
         click.echo("-" * 80)
         
@@ -129,7 +129,7 @@ def list(limit: Optional[int]):
                 f"{pdb_file}"
             )
         
-        logger.info(f"Listed {len(cages)} cages")
+        logger.info(f"Listed {len(cages)} cage(s)")
     
     finally:
         calculator.close()
@@ -137,7 +137,7 @@ def list(limit: Optional[int]):
 
 @cage_group.command()
 @click.argument('cage_id', type=int)
-@click.option('--recalculate', is_flag=True, help='Recalculate volume from PDB file')
+@click.option('--recalculate', '-r', is_flag=True, help='Recalculate volume from PDB file')
 def show(cage_id: int, recalculate: bool):
     """
     Show details for a specific cage.

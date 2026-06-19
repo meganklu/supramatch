@@ -14,7 +14,7 @@ Usage:
 Examples:
     supramatch cage load data/cage.pdb --name MyCage
     supramatch guest import guests.csv
-    supramatch match find 1 --pc-min 0.3 --pc-max 0.7 --limit 10
+    supramatch match find 1 --pc-ideal 0.55 --pc-tolerance 0.15 --limit 10
     supramatch db init
 """
 
@@ -42,7 +42,7 @@ def cli(ctx):
     Examples:
         supramatch cage load data/cage.pdb --name MyCage
         supramatch guest import guests.csv
-        supramatch match 1 --pc-min 0.3 --pc-max 0.7
+        supramatch match find 1 --pc-ideal 0.55 --pc-tolerance 0.15
     """
     ctx.ensure_object(dict)
 

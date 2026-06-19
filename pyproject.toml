@@ -11,6 +11,7 @@ requires-python = ">=3.12"
 authors = [
     { name = "Megan K. Lu", email = "megan.k.lu.28@dartmouth.edu" }
 ]
+
 dependencies = [
     "sqlalchemy>=2.0.0",
     "CageCavityCalc",
@@ -22,6 +23,9 @@ dependencies = [
     "click>=8.0.0",
     "click-spinner>=0.1.10",
 ]
+
+[project.urls]
+Repository = "https://github.com/meganklu/supramatch.git"
 
 [project.scripts]
 supramatch = "supramatch.cli.main:main"
