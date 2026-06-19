@@ -9,8 +9,4 @@ dependencies:
   - rdkit
   - pip
   - pip:
-    - sqlalchemy>=2.0.0
-    - click>=8.0.0
-    - CageCavityCalc
-    - alembic>=1.12.0
-    - python-dotenv>=1.0.0
+    - -r requirements.txt
