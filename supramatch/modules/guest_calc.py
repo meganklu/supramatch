@@ -2,12 +2,20 @@
 Calculate guest properties, import from files, and manage database operations.
     
 Volumes calculated from SMILES using RDKit's ComputeMolVolume()
+
+Supported Import Formats:
+    - XML
+    - CSV
+    - JSON
 """
 
 import sys
 import logging
+import csv
+import json
+import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List, Dict
 from rdkit import Chem
 from rdkit.Chem import AllChem, Descriptors
 from sqlalchemy import select
@@ -353,6 +361,255 @@ class GuestCalculator:
         """Close database session."""
         logger.debug("Closing GuestCalculator session")
         self.session.close()
+
+    # ==================== FILE IMPORTS ====================
+    
+    def import_from_xml(self, xml_file: str) -> List[Guest]:
+        """
+        Import guests from XML file.
+        
+        Expected XML structure:
+            <guests>
+                <guest>
+                    <name>Benzene</name>
+                    <smiles>c1ccccc1</smiles>
+                    <cas_number>71-43-2</cas_number>
+                    <supplier>Sigma-Aldrich</supplier>
+                    <price_per_gram>0.59</price_per_gram>
+                    <physical_state>liquid</physical_state>
+                    <url>https://...</url>
+                </guest>
+                ...
+            </guests>
+        
+        Args:
+            xml_file: Path to XML file
+        
+        Returns:
+            List[Guest]: Created guest objects
+        
+        Raises:
+            FileNotFoundError: If XML file doesn't exist
+            ValueError: If XML is malformed
+        """
+        logger.debug(f"Importing guests from XML file: {xml_file}")
+        xml_path = Path(xml_file)
+        
+        if not xml_path.exists():
+            logger.error(f"XML file not found: {xml_file}")
+            raise FileNotFoundError(f"XML file not found: {xml_file}")
+        
+        try:
+            tree = ET.parse(xml_file)
+            root = tree.getroot()
+            
+            created_guests = []
+            
+            for guest_elem in root.findall('guest'):
+                try:
+                    guest_data = {
+                        'name': guest_elem.findtext('name', '').strip(),
+                        'smiles': guest_elem.findtext('smiles', '').strip(),
+                        'cas_number': guest_elem.findtext('cas_number', '').strip() or None,
+                        'supplier': guest_elem.findtext('supplier', '').strip() or None,
+                        'price_per_gram': self._parse_float(guest_elem.findtext('price_per_gram')),
+                        'physical_state': guest_elem.findtext('physical_state', '').strip() or None,
+                        'url': guest_elem.findtext('url', '').strip() or None,
+                    }
+                    
+                    # Validate required fields
+                    if not guest_data['name'] or not guest_data['smiles']:
+                        logger.warning("Skipping guest with missing name or SMILES")
+                        continue
+                    
+                    guest = self.create_guest(**guest_data)
+                    created_guests.append(guest)
+                
+                except ValueError as e:
+                    logger.warning(f"Failed to create guest from XML: {e}")
+                    continue
+            
+            logger.info(f"Imported {len(created_guests)} guests from XML")
+            return created_guests
+        
+        except ET.ParseError as e:
+            logger.error(f"Failed to parse XML: {e}")
+            raise ValueError(f"Failed to parse XML: {e}")
+    
+    def import_from_csv(self, csv_file: str) -> List[Guest]:
+        """
+        Import guests from CSV file.
+        
+        Expected CSV columns:
+            name, smiles, cas_number, supplier, price_per_gram, physical_state, url
+        
+        Args:
+            csv_file: Path to CSV file
+        
+        Returns:
+            List[Guest]: Created guest objects
+        
+        Raises:
+            FileNotFoundError: If CSV file doesn't exist
+        """
+        logger.debug(f"Importing guests from CSV file: {csv_file}")
+        csv_path = Path(csv_file)
+        
+        if not csv_path.exists():
+            logger.error(f"CSV file not found: {csv_file}")
+            raise FileNotFoundError(f"CSV file not found: {csv_file}")
+        
+        created_guests = []
+        
+        try:
+            with open(csv_file, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                
+                for row_num, row in enumerate(reader, start=2):
+                    try:
+                        guest_data = {
+                            'name': row.get('name', '').strip(),
+                            'smiles': row.get('smiles', '').strip(),
+                            'cas_number': row.get('cas_number', '').strip() or None,
+                            'supplier': row.get('supplier', '').strip() or None,
+                            'price_per_gram': self._parse_float(row.get('price_per_gram')),
+                            'physical_state': row.get('physical_state', '').strip() or None,
+                            'url': row.get('url', '').strip() or None,
+                        }
+                        
+                        # Validate required fields
+                        if not guest_data['name'] or not guest_data['smiles']:
+                            logger.warning(f"Row {row_num}: Skipping guest with missing name or SMILES")
+                            continue
+                        
+                        guest = self.create_guest(**guest_data)
+                        created_guests.append(guest)
+                    
+                    except ValueError as e:
+                        logger.warning(f"Row {row_num}: Failed to create guest: {e}")
+                        continue
+            
+            logger.info(f"Imported {len(created_guests)} guests from CSV")
+            return created_guests
+        
+        except csv.Error as e:
+            logger.error(f"Failed to parse CSV: {e}")
+            raise ValueError(f"Failed to parse CSV: {e}")
+    
+    def import_from_json(self, json_file: str) -> List[Guest]:
+        """
+        Import guests from JSON file.
+        
+        Expected JSON structure:
+            [
+                {
+                    "name": "Benzene",
+                    "smiles": "c1ccccc1",
+                    "cas_number": "71-43-2",
+                    "supplier": "Sigma-Aldrich",
+                    "price_per_gram": 0.59,
+                    "physical_state": "liquid",
+                    "url": "https://..."
+                },
+                ...
+            ]
+        
+        Args:
+            json_file: Path to JSON file
+        
+        Returns:
+            List[Guest]: Created guest objects
+        
+        Raises:
+            FileNotFoundError: If JSON file doesn't exist
+            ValueError: If JSON is malformed
+        """
+        logger.debug(f"Importing guests from JSON file: {json_file}")
+        json_path = Path(json_file)
+        
+        if not json_path.exists():
+            logger.error(f"JSON file not found: {json_file}")
+            raise FileNotFoundError(f"JSON file not found: {json_file}")
+        
+        created_guests = []
+        
+        try:
+            with open(json_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            if not isinstance(data, list):
+                logger.error("JSON must contain an array of guest objects")
+                raise ValueError("JSON must contain an array of guest objects")
+            
+            for guest_data in data:
+                try:
+                    guest = self.create_guest(
+                        name=guest_data.get('name'),
+                        smiles=guest_data.get('smiles'),
+                        cas_number=guest_data.get('cas_number'),
+                        supplier=guest_data.get('supplier'),
+                        price_per_gram=guest_data.get('price_per_gram'),
+                        physical_state=guest_data.get('physical_state'),
+                        url=guest_data.get('url'),
+                    )
+                    created_guests.append(guest)
+                
+                except ValueError as e:
+                    logger.warning(f"Failed to create guest from JSON: {e}")
+                    continue
+            
+            logger.info(f"Imported {len(created_guests)} guests from JSON")
+            return created_guests
+        
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse JSON: {e}")
+            raise ValueError(f"Failed to parse JSON: {e}")
+    
+    def import_from_file(self, file_path: str) -> List[Guest]:
+        """
+        Auto-detect file format and import.
+        
+        Supports: XML, CSV, JSON
+        
+        Args:
+            file_path: Path to file
+        
+        Returns:
+            List[Guest]: Created guest objects
+        
+        Example:
+            >>> calc = GuestCalculator()
+            >>> guests = calc.import_from_file('guests.xml')
+            >>> guests = calc.import_from_file('guests.csv')
+            >>> guests = calc.import_from_file('guests.json')
+        """
+        logger.debug(f"Importing guests from file: {file_path}")
+        file_ext = Path(file_path).suffix.lower()
+        
+        if file_ext == '.xml':
+            logger.debug("File identified as XML file")
+            return self.import_from_xml(file_path)
+        elif file_ext == '.csv':
+            logger.debug("File identified as CSV file")
+            return self.import_from_csv(file_path)
+        elif file_ext == '.json':
+            logger.debug("File identified as JSON file")
+            return self.import_from_json(file_path)
+        else:
+            logger.error(f"Unsupported file format: {file_ext}")
+            raise ValueError(f"Unsupported file format: {file_ext}")
+    
+    # ==================== UTILITIES ====================
+    
+    @staticmethod
+    def _parse_float(value: Optional[str]) -> Optional[float]:
+        """Safely parse float value."""
+        if not value or (isinstance(value, str) and value.strip() == ''):
+            return None
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            return None
 
 def main(args):
     """
