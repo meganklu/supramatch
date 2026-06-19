@@ -2,7 +2,7 @@
 #
 # Test basic CLI usage
 
-conda init
+eval "$(conda shell.bash hook)"
 conda activate supramatch_env
 
 supramatch --help
