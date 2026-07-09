@@ -7,31 +7,30 @@ Evaluation Criteria:
     - Quality Score: Combined metric (0-100)
 """
 
-import sys
 import logging
-from pathlib import Path
 from typing import List, Optional
-from sqlalchemy import desc, asc, select, func
-from supramatch.db.models import Guest
-from supramatch.db.models import Cage, Guest, HostGuestPairing
-from supramatch.db.database import get_session
+from supramatch.db import queries
+from supramatch.db.database import get_connection, close_connection
+from supramatch.models.cage import Cage
+from supramatch.models.guest import Guest
+from supramatch.models.match import Match
 from supramatch.config import HG_MATCH_CONFIG
-from supramatch.utils.helpers import format_volume, format_price, format_packing_coefficient
+from supramatch.utils.helpers import format_packing_coefficient
 
 logger = logging.getLogger(__name__)
 
 class MatchingEngine:
     """
     Match guest molecules to host cages based on packing coefficient and price.
-    
+
     Evaluation:
         - Primary: Packing coefficient (geometric fit)
         - Secondary: Price per gram (cost efficiency)
     """
-    
+
     def __init__(self):
-        self.session = get_session()
-        
+        self.conn = get_connection()
+
         # Load config parameters
         self.pc_ideal_default = HG_MATCH_CONFIG["pc_ideal_default"]
         self.pc_tolerance_default = HG_MATCH_CONFIG["pc_tolerance_default"]
@@ -43,7 +42,7 @@ class MatchingEngine:
             f"pc_tolerance_default={self.pc_tolerance_default}, "
             f"viable_threshold={self.viable_threshold}"
         )
-    
+
     # ==================== CALCULATIONS ====================
 
     def calculate_packing_coefficient(
@@ -53,14 +52,14 @@ class MatchingEngine:
     ) -> float:
         """
         Calculate packing coefficient for a host-guest pair.
-        
+
         Args:
             cage_volume: Cavity volume in Å³.
             guest_volume: Guest volume in Å³.
-        
+
         Returns:
             float: Packing coefficient (0-1).
-        
+
         Raises:
             ValueError: If volumes are invalid.
         """
@@ -69,7 +68,7 @@ class MatchingEngine:
         if cage_volume <= 0 or guest_volume <= 0:
             logger.error("Volumes must be positive values")
             raise ValueError("Volumes must be positive values")
-        
+
         pc = guest_volume / cage_volume
         pc = min(pc, 1.0)
         pc_str = format_packing_coefficient(pc)
@@ -83,25 +82,22 @@ class MatchingEngine:
     ) -> float:
         """
         Calculate quality score for a host-guest pair (0-100).
-        
+
         Balances two factors:
         1. Geometric fit (packing coefficient): 0-50 points
            - Optimal range 0.55 ± 0.09 gets full points
            - Outside this range score decreases
-        
+
         2. Cost efficiency (price per gram): 0-50 points
            - Lower price = higher score
            - Assumes typical range $0.10-$100.00/g
-        
+
         Args:
             packing_coefficient: Volume ratio (0–1)
             guest_price: Cost in USD per gram ($/g)
 
         Returns:
             float: Quality score (0-100), higher is better
-
-        Raises:
-            ValueError: If packing coefficient or price are invalid.
         """
         logger.debug(f"Calculating quality score: packing_coefficient={packing_coefficient}, guest_price={guest_price}")
 
@@ -111,8 +107,8 @@ class MatchingEngine:
             pc_score = 50
         else:
             # Scale based on amount outside of ideal range
-            pc_score = 50 - (abs(packing_coefficient - self.pc_ideal_default) * 100) 
-        
+            pc_score = 50 - (abs(packing_coefficient - self.pc_ideal_default) * 100)
+
         # Price score: lower price = higher score
         if guest_price:
             # Normalize on typical range $0.10-$100.00/g
@@ -123,50 +119,59 @@ class MatchingEngine:
             price_score = max(0, 50 - (guest_price * 0.5))
         else:
             price_score = 25  # Neutral if no price
-        
+
         return pc_score + price_score
-    
+
+    # ==================== LOOKUPS ====================
+
+    def get_cage(self, cage_id: int) -> Optional[Cage]:
+        """Retrieve a cage by ID."""
+        return queries.get_cage_by_id(self.conn, cage_id)
+
+    def get_guest(self, guest_id: int) -> Optional[Guest]:
+        """Retrieve a guest by ID."""
+        return queries.get_guest_by_id(self.conn, guest_id)
+
     # ==================== DATABASE OPERATIONS ====================
 
-    def create_pairing(
+    def create_match(
         self,
         cage_id: int,
         guest_id: int
-    ) -> HostGuestPairing:
+    ) -> Match:
         """
-        Create a pairing and calculate metrics.
-        
+        Create a match and calculate metrics.
+
         Args:
             cage_id: Cage ID.
             guest_id: Guest ID.
-        
-        Returns:
-            HostGuestPairing: The created pairing object.
-        
-        Raises:
-            ValueError: If cage/guest not found or pairing already exists.
-        """
-        logger.debug(f"Creating pairing: cage_id={cage_id}, guest_id={guest_id}")
 
-        cage = self.session.get(Cage, cage_id)
-        guest = self.session.get(Guest, guest_id)
-        
+        Returns:
+            Match: The created match.
+
+        Raises:
+            ValueError: If cage/guest not found or match already exists.
+        """
+        logger.debug(f"Creating match: cage_id={cage_id}, guest_id={guest_id}")
+
+        cage = queries.get_cage_by_id(self.conn, cage_id)
+        guest = queries.get_guest_by_id(self.conn, guest_id)
+
         if not cage:
             logger.error(f"Cage with ID {cage_id} not found")
             raise ValueError(f"Cage with ID {cage_id} not found")
-        
+
         if not guest:
             logger.error(f"Guest with ID {guest_id} not found")
             raise ValueError(f"Guest with ID {guest_id} not found")
-        
-        # Check if pairing already exists
-        stmt = select(HostGuestPairing).filter_by(cage_id=cage_id, guest_id=guest_id)
-        existing = self.session.scalars(stmt).first()
-        
+
+        # Check if match already exists
+        existing = queries.get_match_by_cage_guest(self.conn, cage_id, guest_id)
+
         if existing:
-            logger.warning(f"Pairing already exists for cage {cage_id} and guest {guest_id}")
-            raise ValueError(f"Pairing already exists for cage {cage_id} and guest {guest_id}")
-        
+            logger.warning(f"Match already exists for cage {cage_id} and guest {guest_id}")
+            raise ValueError(f"Match already exists for cage {cage_id} and guest {guest_id}")
+
         # Calculate packing coefficient
         pc = self.calculate_packing_coefficient(cage.cavity_volume, guest.molecular_volume)
         pc_str = format_packing_coefficient(pc)
@@ -181,22 +186,20 @@ class MatchingEngine:
             is_viable = abs(pc - self.pc_ideal_default) <= self.pc_tolerance_default
         else:
             is_viable = True
-        logger.debug(f"Pairing viable: {is_viable}")
-        
-        pairing = HostGuestPairing(
+        logger.debug(f"Match viable: {is_viable}")
+
+        match = queries.create_match(
+            self.conn,
             cage_id=cage_id,
             guest_id=guest_id,
             packing_coefficient=pc,
             quality_score=quality_score,
             is_viable=is_viable
         )
-        
-        self.session.add(pairing)
-        self.session.commit()
-        
-        logger.info(f"Created pairing: {cage.name} + {guest.name} (PC={pc_str}, quality={quality_score})")
-        return pairing
-    
+
+        logger.info(f"Created match: {cage.name} + {guest.name} (PC={pc_str}, quality={quality_score})")
+        return match
+
     def match_guests_to_cage(
         self,
         cage_id: int,
@@ -207,29 +210,29 @@ class MatchingEngine:
         only_viable: bool = True,
         sort_by: str = 'quality_score',
         limit: int = None
-    ) -> List[HostGuestPairing]:
+    ) -> List[Match]:
         """
         Find matching guests for a cage with multiple filter criteria.
-        
+
         Args:
             cage_id: Cage ID.
             pc_ideal: Ideal packing coefficient.
             pc_tolerance: Packing coefficient range tolerance.
             max_price: Maximum guest price per gram ($/g).
             min_price: Minimum guest price per gram ($/g).
-            only_viable: Only return pairings marked as viable.
+            only_viable: Only return matches marked as viable.
             sort_by: Sort key:
                 - 'quality_score': Combined metric (descending) (default)
                 - 'packing_coefficient': Geometric fit (closest to ideal packing coefficient)
                 - 'price': Cost per gram (ascending)
             limit: Maximum number of results.
-        
+
         Returns:
-            list: List of matching HostGuestPairing objects.
-        
+            list: List of matching Match objects.
+
         Raises:
             ValueError: If cage not found.
-        
+
         Example:
             >>> engine = MatchingEngine()
             >>> matches = engine.match_guests_to_cage(
@@ -240,8 +243,8 @@ class MatchingEngine:
             ...     sort_by='quality_score',
             ...     limit=10
             ... )
-            >>> for pairing in matches:
-            ...     print(f"{pairing.guest.name}: {pairing.quality_score:.1f}/100")
+            >>> for match in matches:
+            ...     print(f"{match.guest_name}: {match.quality_score:.1f}/100")
         """
         logger.info(f"Finding matches for cage_id={cage_id}")
         logger.debug(f"Filters: pc_ideal={pc_ideal}, pc_tolerance={pc_tolerance}, max_price={max_price}, min_price={min_price}, only_viable={only_viable}, sort_by={sort_by}, limit={limit}")
@@ -254,152 +257,123 @@ class MatchingEngine:
             pc_tolerance = self.pc_tolerance_default
             logger.debug(f"Packing coefficient tolerance set to: {format_packing_coefficient(pc_tolerance)}")
 
-        cage = self.session.get(Cage, cage_id)
-        
+        cage = queries.get_cage_by_id(self.conn, cage_id)
+
         if not cage:
             logger.error(f"Cage with ID {cage_id} not found")
             raise ValueError(f"Cage with ID {cage_id} not found")
-        
-        # Build query
-        logger.debug(f"Filtering for cage_id={cage_id}, pc_ideal={pc_ideal}, pc_tolerance={pc_tolerance}")
-        stmt = select(HostGuestPairing).where(
-            HostGuestPairing.cage_id == cage_id,
-            func.abs(HostGuestPairing.packing_coefficient - pc_ideal) <= pc_tolerance
+
+        matches = queries.find_matches_for_cage(
+            self.conn,
+            cage_id,
+            pc_ideal,
+            pc_tolerance,
+            max_price=max_price,
+            min_price=min_price,
+            only_viable=only_viable,
+            sort_by=sort_by,
+            limit=limit,
         )
-        
-        if only_viable:
-            logger.debug("Filtering for viable guests")
-            stmt = stmt.where(HostGuestPairing.is_viable == True)
-        
-        needs_guest_join = max_price is not None or min_price is not None or sort_by == 'price'
-        if needs_guest_join:
-            stmt = stmt.join(Guest)
-        
-            if max_price is not None:
-                logger.debug(f"Filtering for max_price={max_price}")
-                stmt = stmt.where(Guest.price_per_gram <= max_price)
-            
-            if min_price is not None:
-                logger.debug(f"Filtering for min_price={min_price}")
-                stmt = stmt.where(Guest.price_per_gram >= min_price)
 
-        # Apply sorting
-        if sort_by == 'quality_score':
-            logger.debug(f"Sorting by quality_score")
-            stmt = stmt.order_by(HostGuestPairing.quality_score.desc())
-        elif sort_by == 'packing_coefficient':
-            logger.debug(f"Sorting by packing_coefficient")
-            stmt = stmt.order_by(func.abs(HostGuestPairing.packing_coefficient - pc_ideal).asc())
-        elif sort_by == 'price':
-            logger.debug(f"Sorting by price")
-            stmt = stmt.order_by(Guest.price_per_gram.asc().nulls_last())
-        
-        pairings = self.session.scalars(stmt).all()
+        logger.info(f"Found {len(matches)} match(es) for {cage.name}")
 
-        if limit:
-            logger.debug(f"Limiting pairings to {limit}")
-            pairings = pairings[:limit]
+        return matches
 
-        logger.info(f"Found {len(pairings)} match(es) for {cage.name}")
-
-        return pairings
-    
-    def batch_create_pairings(self, cage_id: int, guest_ids: List[int] = None) -> dict:
+    def batch_create_matches(self, cage_id: int, guest_ids: List[int] = None) -> dict:
         """
-        Create pairings for a cage with multiple guests.
-        
+        Create matches for a cage with multiple guests.
+
         Args:
             cage_id: Cage ID.
             guest_ids: List of guest IDs (if None, use all guests).
-        
+
         Returns:
             dict: Results with keys 'created', 'skipped', 'failed'.
         """
-        logger.debug(f"Creating pairing: cage_id={cage_id}")
+        logger.debug(f"Creating matches: cage_id={cage_id}")
 
-        cage = self.session.get(Cage, cage_id)
-        
+        cage = queries.get_cage_by_id(self.conn, cage_id)
+
         if not cage:
             logger.error(f"Cage with ID {cage_id} not found")
             raise ValueError(f"Cage with ID {cage_id} not found")
-        
+
         # Get guest list
-        stmt = select(Guest)
         if guest_ids:
             logger.debug(f"Selecting guests from list of guest_ids")
-            stmt = stmt.where(Guest.id.in_(guest_ids))
-        guests = self.session.scalars(stmt).all()
-        
+            guests = queries.get_guests_by_ids(self.conn, guest_ids)
+        else:
+            guests = queries.list_guests(self.conn)
+
         results = {'created': 0, 'skipped': 0, 'failed': 0}
-        
+
         for guest in guests:
             try:
-                logger.debug(f"Creating pairing: cage_id={cage_id}, guest_id={guest.id}")
+                logger.debug(f"Creating match: cage_id={cage_id}, guest_id={guest.id}")
 
-                # Check if pairing already exists
-                stmt = select(HostGuestPairing).filter_by(cage_id=cage_id, guest_id=guest.id)
-                existing = self.session.scalars(stmt).first()
-                
+                # Check if match already exists
+                existing = queries.get_match_by_cage_guest(self.conn, cage_id, guest.id)
+
                 if existing:
-                    logger.debug(f"Pairing already exists for cage {cage_id} and guest {guest.id}")
+                    logger.debug(f"Match already exists for cage {cage_id} and guest {guest.id}")
                     results['skipped'] += 1
                     continue
-                
-                self.create_pairing(cage_id, guest.id)
-                results['created'] += 1
-            
-            except Exception as e:
-                logger.error(f"Failed to create pairing between cage_id={cage_id} and guest_id={guest.id}: {e}", exc_info=True)
-                results['failed'] += 1
-        
-        logger.info(f"Created pairings for cage_id={cage_id}: {results['created']} created, {results['skipped']} skipped, {results['failed']} failed")
-        return results
-    
-    def get_pairing(self, pairing_id: int) -> Optional[HostGuestPairing]:
-        """Get a specific pairing."""
-        logger.debug(f"Retrieving pairing with ID: {pairing_id}")
-        return self.session.get(HostGuestPairing, pairing_id)
-    
-    def update_pairing_notes(self, pairing_id: int, notes: str) -> bool:
-        """Update notes for a pairing."""
-        logger.debug(f"Updating notes for pairing with ID: {pairing_id}")
-        pairing = self.session.get(HostGuestPairing, pairing_id)
-        
-        if pairing:
-            old_notes = pairing.notes
-            pairing.notes = notes
-            logger.info(f"Updated pairing_id={pairing_id} notes from '{old_notes}' to '{notes}'")
-            self.session.commit()
-            return True
-        
-        logger.warning(f"Pairing with ID {pairing_id} not found")
-        return False
-    
-    def delete_pairing(self, pairing_id: int) -> bool:
-        """Delete a pairing."""
-        logger.debug(f"Deleting pairing with ID: {pairing_id}")
 
-        pairing = self.session.get(HostGuestPairing, pairing_id)
-        
-        if pairing:
-            self.session.delete(pairing)
-            self.session.commit()
-            logger.info(f"Deleted pairing")
+                self.create_match(cage_id, guest.id)
+                results['created'] += 1
+
+            except Exception as e:
+                logger.error(f"Failed to create match between cage_id={cage_id} and guest_id={guest.id}: {e}", exc_info=True)
+                results['failed'] += 1
+
+        logger.info(f"Created matches for cage_id={cage_id}: {results['created']} created, {results['skipped']} skipped, {results['failed']} failed")
+        return results
+
+    def list_matches_for_cage(self, cage_id: int) -> List[Match]:
+        """Get all matches for a cage, regardless of fit or viability."""
+        logger.debug(f"Retrieving all matches for cage_id={cage_id}")
+        return queries.list_matches_for_cage(self.conn, cage_id)
+
+    def get_match(self, match_id: int) -> Optional[Match]:
+        """Get a specific match."""
+        logger.debug(f"Retrieving match with ID: {match_id}")
+        return queries.get_match(self.conn, match_id)
+
+    def update_match_notes(self, match_id: int, notes: str) -> bool:
+        """Update notes for a match."""
+        logger.debug(f"Updating notes for match with ID: {match_id}")
+        match = queries.get_match(self.conn, match_id)
+
+        if match:
+            queries.update_match_notes(self.conn, match_id, notes)
+            logger.info(f"Updated match_id={match_id} notes from '{match.notes}' to '{notes}'")
             return True
-        
-        logger.warning(f"Pairing with ID {pairing_id} not found")
+
+        logger.warning(f"Match with ID {match_id} not found")
         return False
-    
-    def delete_all_pairings_for_cage(self, cage_id: int) -> int:
-        """Delete all pairings for a cage."""
-        logger.debug(f"Deleting pairing with cage_id={cage_id}")
-        stmt = delete(HostGuestPairing).where(cage_id=cage_id)
-        result = self.session.execute(stmt)
-        self.session.commit()
-        logger.info(f"Deleted {results.rowcount} pairings")
-        return result.rowcount
-    
+
+    def delete_match(self, match_id: int) -> bool:
+        """Delete a match."""
+        logger.debug(f"Deleting match with ID: {match_id}")
+
+        match = queries.get_match(self.conn, match_id)
+
+        if match:
+            queries.delete_match(self.conn, match_id)
+            logger.info(f"Deleted match")
+            return True
+
+        logger.warning(f"Match with ID {match_id} not found")
+        return False
+
+    def delete_all_matches_for_cage(self, cage_id: int) -> int:
+        """Delete all matches for a cage."""
+        logger.debug(f"Deleting matches with cage_id={cage_id}")
+        count = queries.delete_matches_for_cage(self.conn, cage_id)
+        logger.info(f"Deleted {count} match(es)")
+        return count
+
     def close(self):
-        """Close database session."""
-        logger.debug("Closing MatchingEngine session")
-        self.session.close()
+        """Close database connection."""
+        logger.debug("Closing MatchingEngine connection")
+        close_connection()

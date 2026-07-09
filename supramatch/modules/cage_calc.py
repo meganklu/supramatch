@@ -4,15 +4,13 @@ Calculate and manage cage cavity volumes in the database.
 Uses CageCavityCalc
 """
 
-import sys
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 from CageCavityCalc.CageCavityCalc import cavity
-from sqlalchemy import select
-from supramatch.db.base import Base, TimestampMixin 
-from supramatch.db.models import Cage
-from supramatch.db.database import get_session
+from supramatch.db import queries
+from supramatch.db.database import get_connection, close_connection
+from supramatch.models.cage import Cage
 from supramatch.config import CAGE_CALC_CONFIG
 from supramatch.utils.helpers import format_volume
 
@@ -27,7 +25,7 @@ class CageCalculator:
     """
     
     def __init__(self):
-        self.session = get_session()
+        self.conn = get_connection()
 
         # Load config parameters
         self.grid_spacing = CAGE_CALC_CONFIG["grid_spacing"]
@@ -183,83 +181,82 @@ class CageCalculator:
         logger.debug(f"Cage name: {cage_name}")
 
         # Check if cage already exists
-        stmt = select(Cage).filter_by(name=cage_name)
-        existing = self.session.scalars(stmt).first()
+        existing = queries.get_cage_by_name(self.conn, cage_name)
         if existing:
             logger.warning(f"Cage '{cage_name}' already exists in database")
             raise ValueError(f"Cage '{cage_name}' already exists in database")
-        
+
         # Calculate volume (in cubic angstroms)
         logger.debug(f"Calculating cavity volume for {cage_name}")
         volume = self.calculate_volume(str(pdb_path))
         volume_str = format_volume(volume)
-        
-        # Create cage object
-        cage = Cage(
+
+        # Create cage record
+        cage = queries.create_cage(
+            self.conn,
             name=cage_name,
             cas_number=cas_number,
             pdb_file=str(pdb_path.absolute()),
-            cavity_volume=volume
+            cavity_volume=volume,
         )
-        
-        self.session.add(cage)
-        self.session.commit()
-        
+
         logger.info(f"Created cage '{cage_name}' with volume {volume_str}")
         return cage
-    
+
     def get_cage(self, cage_id: int = None, cage_name: str = None) -> Optional[Cage]:
         """
         Retrieve a cage from the database.
-        
+
         Args:
             cage_id: Cage ID (primary key).
             cage_name: Cage name.
-        
+
         Returns:
             Cage: The cage object or None if not found.
         """
         if cage_id:
             logger.debug(f"Retrieving cage with ID: {cage_id}")
-            return self.session.get(Cage, cage_id)
+            return queries.get_cage_by_id(self.conn, cage_id)
         elif cage_name:
             logger.debug(f"Retrieving cage with name: {cage_name}")
-            stmt = select(Cage).filter_by(name=cage_name)
-            return self.session.scalars(stmt).first()
+            return queries.get_cage_by_name(self.conn, cage_name)
         return None
-    
-    def list_cages(self):
+
+    def list_cages(self) -> List[Cage]:
         """
         Get all cages from the database.
-        
+
         Returns:
             list: List of all Cage objects.
         """
         logger.debug("Retrieving all cages from database")
-        stmt = select(Cage)
-        cages = self.session.scalars(stmt).all()
+        cages = queries.list_cages(self.conn)
         logger.info(f"Found {len(cages)} cage(s) in database")
         return cages
-    
+
+    def count_matches(self, cage_id: int) -> int:
+        """Get the number of matches for a cage."""
+        return queries.count_matches_for_cage(self.conn, cage_id)
+
     def update_cage_volume(self, cage_id: int, recalculate: bool = False) -> Optional[float]:
         """
         Update cage volume by recalculating from PDB file.
-        
+
         Args:
             cage_id: Cage ID.
             recalculate: If True, recalculate volume from PDB file.
-        
+
         Returns:
             float: New volume in Ų or None if cage not found.
         """
         logger.debug(f"Updating volume for cage ID: {cage_id}")
 
-        cage = self.session.get(Cage, cage_id)
-        
+        cage = queries.get_cage_by_id(self.conn, cage_id)
+
         if not cage:
             logger.warning(f"Cage with ID {cage_id} not found")
             return None
-        
+
         if recalculate and cage.pdb_file:
             try:
                 logger.info(f"Recalculating volume for {cage.name}")
@@ -267,42 +264,38 @@ class CageCalculator:
                 old_volume_str = format_volume(old_volume)
                 new_volume = self.calculate_volume(cage.pdb_file)
                 new_volume_str = format_volume(new_volume)
-                cage.cavity_volume = new_volume
-                self.session.commit()
+                queries.update_cage_volume(self.conn, cage_id, new_volume)
                 logger.info(f"Updated {cage.name} volume from {old_volume_str} to {new_volume_str}")
                 return new_volume
             except Exception as e:
                 logger.error(f"Failed to recalculate volume for {cage.name}: {e}")
-                self.session.rollback()
                 raise ValueError(f"Failed to recalculate volume: {e}")
-        
+
         return cage.cavity_volume
-    
+
     def delete_cage(self, cage_id: int) -> bool:
         """
         Delete a cage from the database.
-        
+
         Args:
             cage_id: Cage ID.
-        
+
         Returns:
             bool: True if deleted, False if not found.
         """
         logger.debug(f"Deleting cage with ID: {cage_id}")
 
-        cage = self.session.get(Cage, cage_id)
-        
+        cage = queries.get_cage_by_id(self.conn, cage_id)
+
         if cage:
-            cage_name = cage.name
-            self.session.delete(cage)
-            self.session.commit()
-            logger.info(f"Deleted cage '{cage_name}'")
+            queries.delete_cage(self.conn, cage_id)
+            logger.info(f"Deleted cage '{cage.name}'")
             return True
 
         logger.warning(f"Cage with ID {cage_id} not found")
         return False
-    
+
     def close(self):
-        """Close database session."""
-        logger.debug("Closing CageCalculator session")
-        self.session.close()
+        """Close database connection."""
+        logger.debug("Closing CageCalculator connection")
+        close_connection()

@@ -4,7 +4,7 @@ Configuration management for supramatch.
 Configuration can be overridden with environment variables.
 
 Example environment variables:
-    export DATABASE_URL="postgresql://user:pass@localhost/supramatch"
+    export DATABASE_PATH="/path/to/supramatch.db"
     export LOG_LEVEL="DEBUG"
     export CAGE_GRID_SPACING="0.3"
     export GUEST_RANDOM_SEED="12345"
@@ -23,9 +23,9 @@ load_dotenv()
 
 # ==================== DATABASE ====================
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    f"sqlite:///{PROJECT_ROOT}/data/supramatch.db"
+DATABASE_PATH = os.getenv(
+    "DATABASE_PATH",
+    str(PROJECT_ROOT / "data" / "supramatch.db")
 )
 
 # ==================== LOGGING ====================

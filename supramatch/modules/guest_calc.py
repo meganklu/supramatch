@@ -9,19 +9,17 @@ Supported Import Formats:
     - JSON
 """
 
-import sys
 import logging
 import csv
 import json
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Optional, Tuple, List, Dict
+from typing import Optional, List
 from rdkit import Chem
-from rdkit.Chem import AllChem, Descriptors
-from sqlalchemy import select
-from supramatch.db.base import Base, TimestampMixin 
-from supramatch.db.models import Guest
-from supramatch.db.database import get_session
+from rdkit.Chem import AllChem
+from supramatch.db import queries
+from supramatch.db.database import get_connection, close_connection
+from supramatch.models.guest import Guest
 from supramatch.config import GUEST_CALC_CONFIG
 from supramatch.utils.helpers import format_volume, format_price
 
@@ -37,7 +35,7 @@ class GuestCalculator:
     """
     
     def __init__(self):
-        self.session = get_session()
+        self.conn = get_connection()
 
         # Load config parameters
         self.random_seed = GUEST_CALC_CONFIG["random_seed"]
@@ -174,14 +172,12 @@ class GuestCalculator:
         
         # Check if guest already exists by CAS number or name
         if cas_number:
-            stmt = select(Guest).filter_by(cas_number=cas_number)
-            existing = self.session.scalars(stmt).first()
+            existing = queries.get_guest_by_cas(self.conn, cas_number)
             if existing:
                 logger.warning(f"Guest with CAS number '{cas_number}' already exists in database")
                 raise ValueError(f"Guest with CAS number '{cas_number}' already exists in database")
-        
-        stmt = select(Guest).filter_by(name=name)
-        existing = self.session.scalars(stmt).first()
+
+        existing = queries.get_guest_by_name(self.conn, name)
         if existing:
             logger.warning(f"Guest with name '{name}' already exists in database")
             raise ValueError(f"Guest with name '{name}' already exists in database")
@@ -202,77 +198,60 @@ class GuestCalculator:
             logger.error(f"Physical state must be one of {valid_states}")
             raise ValueError(f"Physical state must be one of {valid_states}")
         
-        try: 
+        try:
             # Calculate properties
             logger.debug(f"Calculating properties for {name}")
             molecular_volume = self.calculate_volume(smiles)
             volume_str = format_volume(molecular_volume)
 
-            # Create guest object
-            guest = Guest(
+            # Create guest record
+            guest = queries.create_guest(
+                self.conn,
                 name=name,
                 smiles=smiles,
+                molecular_volume=molecular_volume,
                 molar_mass=molar_mass,
                 cas_number=cas_number,
-                molecular_volume=molecular_volume,
-                price_per_gram=price_per_gram,
                 supplier=supplier,
+                price_per_gram=price_per_gram,
                 physical_state=physical_state.lower() if physical_state else None,
-                url=url
+                url=url,
             )
 
-            self.session.add(guest)
-            self.session.commit()
-            
             logger.info(f"Created guest '{name}': Volume={volume_str}")
             return guest
 
+        except ValueError:
+            raise
         except Exception as e:
             logger.error(f"Failed to create guest {name}: {e}", exc_info=True)
             raise
-    
+
     def get_guest(self, guest_id: int = None, cas_number: str = None, name: str = None) -> Optional[Guest]:
         """Retrieve a guest from the database."""
         if guest_id:
             logger.debug(f"Retrieving guest with ID: {guest_id}")
-            return self.session.get(Guest, guest_id)
+            return queries.get_guest_by_id(self.conn, guest_id)
         elif cas_number:
             logger.debug(f"Retrieving guest with CAS number: {cas_number}")
-            stmt = select(Guest).filter_by(cas_number=cas_number)
-            return self.session.scalars(stmt).first()
+            return queries.get_guest_by_cas(self.conn, cas_number)
         elif name:
             logger.debug(f"Retrieving guest with name: {name}")
-            stmt = select(Guest).filter_by(name=name)
-            return self.session.scalars(stmt).first()
+            return queries.get_guest_by_name(self.conn, name)
         return None
-    
-    def search_guests(self, name_pattern: str = None, supplier: str = None):
+
+    def search_guests(self, name_pattern: str = None, supplier: str = None) -> List[Guest]:
         """Search for guests with flexible criteria."""
-        stmt = select(Guest)
-        
-        if name_pattern:
-            logger.debug(f"Searching for guests with name pattern: {name_pattern}")
-            stmt = stmt.where(Guest.name.ilike(f"%{name_pattern}%"))
-        
-        if supplier:
-            logger.debug(f"Searching for guests with supplier: {supplier}")
-            stmt = stmt.filter_by(supplier=supplier)
-        
-        return self.session.scalars(stmt).all()
-    
-    def list_guests(self, limit: int = None, offset: int = 0):
+        logger.debug(f"Searching for guests: name_pattern={name_pattern}, supplier={supplier}")
+        return queries.search_guests(self.conn, name_pattern=name_pattern, supplier=supplier)
+
+    def list_guests(self, limit: int = None, offset: int = 0) -> List[Guest]:
         """Get all guests from the database with optional pagination."""
         logger.debug("Retrieving all guests from database")
-        stmt = select(Guest).offset(offset)
-        
-        if limit:
-            logger.debug(f"Limiting guest retrieval to {limit}")
-            stmt = stmt.limit(limit)
-        
-        guests = self.session.scalars(stmt).all()
+        guests = queries.list_guests(self.conn, limit=limit, offset=offset)
         logger.info(f"Found {len(guests)} guest(s) in database")
         return guests
-    
+
     def update_guest_price(self, guest_id: int, new_price_per_gram: float) -> bool:
         """Update guest price without recalculating properties."""
         logger.debug(f"Updating price for guest ID: {guest_id}")
@@ -280,43 +259,40 @@ class GuestCalculator:
         if new_price_per_gram < 0:
             logger.error("Price cannot be negative")
             raise ValueError("Price cannot be negative")
-        
-        guest = self.session.get(Guest, guest_id)
-        
+
+        guest = queries.get_guest_by_id(self.conn, guest_id)
+
         if guest:
             logger.info(f"Updating price for {guest.name}")
-            old_price = guest.price_per_gram
-            old_price_str = format_price(old_price)
-            guest.price_per_gram = new_price_per_gram
+            old_price_str = format_price(guest.price_per_gram)
+            queries.update_guest_price(self.conn, guest_id, new_price_per_gram)
             new_price_str = format_price(new_price_per_gram)
-            self.session.commit()
             logger.info(f"Updated {guest.name} price from {old_price_str} to {new_price_str}")
             return True
-        
+
         logger.warning(f"Guest with ID {guest_id} not found")
         return False
-    
+
     def update_guest_url(self, guest_id: int, url: str) -> bool:
         """Update guest supplier URL."""
         logger.debug(f"Updating URL for guest ID: {guest_id}")
-        guest = self.session.get(Guest, guest_id)
-        
+        guest = queries.get_guest_by_id(self.conn, guest_id)
+
         if guest:
             logger.info(f"Updating URL for {guest.name}")
             old_url = guest.url
-            guest.url = url
-            self.session.commit()
+            queries.update_guest_url(self.conn, guest_id, url)
             logger.info(f"Updated {guest.name} URL from {old_url} to {url}")
             return True
-        
+
         logger.warning(f"Guest with ID {guest_id} not found")
         return False
-    
+
     def recalculate_volume(self, guest_id: int) -> Optional[float]:
         """Recalculate volume for a guest from stored SMILES."""
         logger.debug(f"Recalculating volume for guest ID: {guest_id}")
-        guest = self.session.get(Guest, guest_id)
-        
+        guest = queries.get_guest_by_id(self.conn, guest_id)
+
         if not guest:
             logger.warning(f"Guest with ID {guest_id} not found")
             return None
@@ -324,43 +300,38 @@ class GuestCalculator:
         if not guest.smiles:
             logger.warning(f"Guest with ID {guest_id} does not have SMILES stored")
             return None
-        
+
         try:
             logger.info(f"Recalculating volume for {guest.name}")
-            old_volume = guest.molecular_volume
-            old_volume_str = format_volume(old_volume)
+            old_volume_str = format_volume(guest.molecular_volume)
             new_volume = self.calculate_volume(guest.smiles)
             new_volume_str = format_volume(new_volume)
-            guest.molecular_volume = new_volume
-            self.session.commit()
+            queries.update_guest_volume(self.conn, guest_id, new_volume)
             logger.info(f"Updated {guest.name} volume from {old_volume_str} to {new_volume_str}")
             return new_volume
-        
+
         except Exception as e:
             logger.error(f"Failed to recalculate volume for {guest.name}: {e}")
-            self.session.rollback()
             raise ValueError(f"Failed to recalculate volume: {e}")
-    
+
     def delete_guest(self, guest_id: int) -> bool:
         """Delete a guest from the database."""
         logger.debug(f"Deleting guest with ID: {guest_id}")
 
-        guest = self.session.get(Guest, guest_id)
-        
+        guest = queries.get_guest_by_id(self.conn, guest_id)
+
         if guest:
-            guest_name = guest.name
-            self.session.delete(guest)
-            self.session.commit()
-            logger.info(f"Deleted guest '{guest_name}'")
+            queries.delete_guest(self.conn, guest_id)
+            logger.info(f"Deleted guest '{guest.name}'")
             return True
-        
+
         logger.warning(f"Guest with ID {guest_id} not found")
         return False
-    
+
     def close(self):
-        """Close database session."""
-        logger.debug("Closing GuestCalculator session")
-        self.session.close()
+        """Close database connection."""
+        logger.debug("Closing GuestCalculator connection")
+        close_connection()
 
     # ==================== FILE IMPORTS ====================
     

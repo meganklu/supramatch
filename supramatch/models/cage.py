@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
-from supramatch.utils.helpers import format_packing_coefficient
+from supramatch.utils.helpers import format_volume
 
 @dataclass
 class Cage:

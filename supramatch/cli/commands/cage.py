@@ -166,7 +166,7 @@ def show(cage_id: int, recalculate: bool):
             click.echo(f"  CAS: {cage.cas_number}")
         click.echo(f"  PDB: {cage.pdb_file}")
         click.echo(f"  Created: {cage.created_at.strftime('%Y-%m-%d %H:%M:%S')}")
-        click.echo(f"  Pairings: {cage.pairing_count}")
+        click.echo(f"  Matches: {calculator.count_matches(cage.id)}")
         
         if recalculate and cage.pdb_file:
             try:
@@ -190,12 +190,12 @@ def show(cage_id: int, recalculate: bool):
 
 @cage_group.command()
 @click.argument('cage_id', type=int)
-@click.confirmation_option(prompt='Are you sure you want to delete this cage? This will also delete all associated pairings.')
+@click.confirmation_option(prompt='Are you sure you want to delete this cage? This will also delete all associated matches.')
 def delete(cage_id: int):
     """
     Delete a cage from the database.
-    
-    WARNING: This will also delete all host-guest pairings for this cage.
+
+    WARNING: This will also delete all host-guest matches for this cage.
 
     Example:
         supramatch cage delete 1

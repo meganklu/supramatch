@@ -21,22 +21,22 @@ __email__ = "megan.k.lu.28@dartmouth.edu"
 
 logger = logging.getLogger(__name__)
 
-from supramatch.db.database import init_db, get_session, close_session
-from supramatch.db.models import Cage, Guest, HostGuestPairing
+from supramatch.db.database import init_db, get_connection, close_connection
+from supramatch.models import Cage, Guest, Match
 from supramatch.modules.cage_calc import CageCalculator
 from supramatch.modules.guest_calc import GuestCalculator
-from supramatch.modules.hg_match import MatchingEngine
+from supramatch.modules.matcher import MatchingEngine
 from supramatch.utils.helpers import format_volume, format_price, format_packing_coefficient
 
 __all__ = [
     "__version__",
     "__author__",
     "init_db",
-    "get_session",
-    "close_session",
+    "get_connection",
+    "close_connection",
     "Cage",
     "Guest",
-    "HostGuestPairing",
+    "Match",
     "CageCalculator",
     "GuestCalculator",
     "MatchingEngine",

@@ -316,12 +316,12 @@ def search(query: str):
 
 @guest_group.command()
 @click.argument('guest_id', type=int)
-@click.confirmation_option(prompt='Are you sure you want to delete this guest? This will also delete all associated pairings.')
+@click.confirmation_option(prompt='Are you sure you want to delete this guest? This will also delete all associated matches.')
 def delete(guest_id: int):
     """
     Delete a guest from the database.
-    
-    WARNING: This will also delete all host-guest pairings for this guest.
+
+    WARNING: This will also delete all host-guest matches for this guest.
 
     Example:
         supramatch guest delete 1

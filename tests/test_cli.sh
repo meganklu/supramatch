@@ -23,8 +23,8 @@ supramatch guest load c1ccccc1 --name Benzene \
 
 echo "y" | supramatch db reset
 
-supramatch cage load ../data/tests/zd001_Picture_1.pdb
-supramatch cage load ../data/tests/zd001_Picture_1.pdb --name copy
+supramatch cage load ../data/cages/zd001_Picture_1.pdb
+supramatch cage load ../data/cages/zd001_Picture_1.pdb --name copy
 
 supramatch cage list
 
@@ -33,7 +33,7 @@ supramatch cage show 2 --recalculate
 
 supramatch guest calculate c1ccccc1
 
-supramatch guest import ../data/tests/guests.json
+supramatch guest import data/guests.json
 
 supramatch guest load c1ccccc1 --name Benzene --cas 71-43-2 --price 0.59 -s "Sigma-Aldrich"
 supramatch guest load "Br[C@]12C[C@@H]3C[C@H](C1)C[C@@](Br)(C3)C2"
