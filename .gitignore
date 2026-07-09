@@ -48,8 +48,10 @@ htmlcov/
 # Data
 data/supramatch.db
 data/*.csv
-data/tests
+data/*.json
+data/*.xml
 logs/
+data/cages
 
 # Documentation
 docs/_build/
