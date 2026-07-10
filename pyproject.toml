@@ -11,6 +11,7 @@ requires-python = ">=3.12"
 authors = [
     { name = "Megan K. Lu", email = "megan.k.lu.28@dartmouth.edu" }
 ]
+license = "MIT"
 
 dependencies = [
     "CageCavityCalc",
