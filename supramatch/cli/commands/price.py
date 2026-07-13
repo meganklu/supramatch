@@ -158,17 +158,26 @@ def list_prices(guest_id: int):
         return
 
     click.echo(f"\nPrice quotes for '{prices[0].guest_name}':\n")
-    click.echo(f"{'Source':<12} {'Supplier':<20} {'Purity':<10} {'$/g':>10} {'$/mol':>12}")
-    click.echo("-" * 70)
+    click.echo(f"{'Source':<12} {'Supplier':<20} {'Purity':<10} {'Quoted':<16} {'$/g':>10} {'$/mol':>12} {'$/L':>10}")
+    click.echo("-" * 96)
 
     for p in prices:
-        usd_per_mol_str = f"${p.usd_per_mol:.2f}" if p.usd_per_mol else "N/A"
+        if p.price_usd is not None and p.amount and p.measure:
+            quoted_str = f"{format_price(p.price_usd)}/{p.amount:g}{p.measure}"
+        else:
+            quoted_str = format_price(p.price_usd)
+
+        usd_per_mol_str = format_price(p.usd_per_mol)
+        usd_per_liter_str = format_price(p.usd_per_liter)
+
         click.echo(
             f"{p.source or '':<12} "
             f"{(p.supplier_name or 'N/A')[:20]:<20} "
             f"{(p.purity or 'N/A')[:10]:<10} "
+            f"{quoted_str:<16} "
             f"{format_price(p.usd_per_gram):>10} "
-            f"{usd_per_mol_str:>12}"
+            f"{usd_per_mol_str:>12} "
+            f"{usd_per_liter_str:>10}"
         )
 
     click.echo()

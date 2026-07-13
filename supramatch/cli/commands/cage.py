@@ -111,21 +111,25 @@ def list(limit: Optional[int]):
             cages = cages[:limit]
         
         click.echo(f"\nFound {len(cages)} cage(s):\n")
-        click.echo(f"{'ID':<5} {'Name':<25} {'Volume':<15} {'PDB File'}")
-        click.echo("-" * 80)
-        
+        click.echo(f"{'Cage ID':<7} {'Name':<20} {'Volume':<15} {'Matches':<9} {'CAS':<15} {'PDB File'}")
+        click.echo("-" * 100)
+
         for cage in cages:
             volume_str = format_volume(cage.cavity_volume)
             pdb_file = cage.pdb_file if cage.pdb_file else "N/A"
-            
+            cas_str = cage.cas_number or "N/A"
+            match_count = calculator.count_matches(cage.id)
+
             # Truncate long paths
-            if len(pdb_file) > 35:
-                pdb_file = "..." + pdb_file[-32:]
-            
+            if len(pdb_file) > 30:
+                pdb_file = "..." + pdb_file[-27:]
+
             click.echo(
-                f"{cage.id:<5} "
-                f"{cage.name:<25} "
+                f"{cage.id:<7} "
+                f"{cage.name:<20} "
                 f"{volume_str:<15} "
+                f"{match_count:<9} "
+                f"{cas_str:<15} "
                 f"{pdb_file}"
             )
         

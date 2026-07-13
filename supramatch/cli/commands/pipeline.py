@@ -121,19 +121,22 @@ def run(
 
         click.secho(f"✓ Pipeline complete", fg="green")
         click.echo(f"\nMatch(es) for cage '{cage_name_display}' ({cage_volume_display}):\n")
-        click.echo(f"{'#':<4} {'Guest Name':<25} {'PC':>8} {'$/g':>10} {'Score':>8}")
+        click.echo(f"{'#':<4} {'Guest ID':<9} {'Guest Name':<25} {'PC':>8} {'$/g':>10} {'Score':>8} {'Viable':>8}")
         click.echo("-" * 95)
 
         for idx, match in enumerate(matches, 1):
             pc_str = format_packing_coefficient(match.packing_coefficient)
             price_str = format_price(match.guest_price_per_gram)
+            viable_str = "✓" if match.is_viable else "✗"
 
             click.echo(
                 f"{idx:<4} "
+                f"{match.guest_id:<9} "
                 f"{match.guest_name:<25} "
                 f"{pc_str:>8} "
                 f"{price_str:>10} "
                 f"{match.quality_score:>8.1f} "
+                f"{viable_str:>8}"
             )
 
         click.echo()
