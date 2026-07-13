@@ -9,6 +9,9 @@ Example environment variables:
     export CAGE_GRID_SPACING="0.3"
     export GUEST_RANDOM_SEED="12345"
     export PC_IDEAL_DEFAULT="0.45"
+    export MCULE_API_KEY="..."
+    export MOLPORT_API_KEY="..."
+    export CHEMSPACE_API_KEY="..."
 """
 
 import os
@@ -68,18 +71,34 @@ GUEST_CALC_CONFIG = {
 HG_MATCH_CONFIG = {
     # Default ideal packing coefficient for viable matches
     "pc_ideal_default": float(os.getenv("PC_IDEAL_DEFAULT", "0.55")),
-    
+
     # Default packing coefficient tolerance for viable matches
     "pc_tolerance_default": float(os.getenv("PC_TOLERANCE_DEFAULT", "0.09")),
-    
-    # Whether to apply viability threshold when creating pairings
-    "viable_threshold": os.getenv("VIABLE_THRESHOLD", "true").lower() == "true",
+}
+
+# ==================== PUBCHEM ====================
+
+PUBCHEM_CONFIG = {
+    # Delay between individual name/CAS -> CID resolution requests (PubChem
+    # allows ~5 req/s; name-based lookups can't be batched, so this paces them)
+    "request_delay_seconds": float(os.getenv("PUBCHEM_REQUEST_DELAY", "0.2")),
+
+    # Number of CIDs to request properties for in a single batched call
+    "cid_batch_size": int(os.getenv("PUBCHEM_CID_BATCH_SIZE", "100")),
+}
+
+# ==================== PRICING (ChemPrice) ====================
+
+PRICE_CONFIG = {
+    "mcule_api_key": os.getenv("MCULE_API_KEY"),
+    "molport_api_key": os.getenv("MOLPORT_API_KEY"),
+    "chemspace_api_key": os.getenv("CHEMSPACE_API_KEY"),
+
+    # Skip re-querying a guest if it already has a price quote newer than this
+    "ttl_days": int(os.getenv("PRICE_TTL_DAYS", "30")),
 }
 
 # ==================== FEATURE FLAGS ====================
-
-# Enable web scraping functionality
-ENABLE_SCRAPER = os.getenv("ENABLE_SCRAPER", "false").lower() == "true"
 
 # Enable result caching
 ENABLE_CACHE = os.getenv("ENABLE_CACHE", "true").lower() == "true"

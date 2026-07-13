@@ -12,7 +12,6 @@ Options:
     --max-price PRICE    Maximum guest price in $/g
     --min-price PRICE    Minimum guest price in $/g
     --sort METRIC        Sort by: quality_score, packing_coefficient, price
-    --only-viable        Only show matches marked as viable
     --limit N            Maximum number of results to display (default: 20)
 
 Examples:
@@ -164,11 +163,11 @@ def info(cage_id: int):
         pc_ideal_default = HG_MATCH_CONFIG["pc_ideal_default"]
         pc_tolerance_default = HG_MATCH_CONFIG["pc_tolerance_default"]
 
-        optimal_count = sum(1 for pc in pcs if abs(pc - pc_ideal_default) <= pc_tolerance_default)
+        viable_count = sum(1 for m in matches if m.is_viable)
 
         click.echo(f"\nMatch Information for Cage '{cage.name}':\n")
         click.echo(f"  Total Matches: {len(matches)}")
-        click.echo(f"  Optimal Fit ({pc_ideal_default} ± {pc_tolerance_default}): {optimal_count}")
+        click.echo(f"  Viable ({pc_ideal_default} ± {pc_tolerance_default}): {viable_count}")
 
         if pcs:
             click.echo(f"\nPacking Coefficient:")
@@ -207,7 +206,6 @@ def info(cage_id: int):
 @click.option('--pc-tolerance', '-t', default=HG_MATCH_CONFIG["pc_tolerance_default"], type=float, help='Packing coefficient tolerance range')
 @click.option('--max-price', default=None, type=float, help='Maximum guest price ($/g)')
 @click.option('--min-price', default=None, type=float, help='Minimum guest price ($/g)')
-@click.option('--only-viable', '-o', is_flag=True, help='Only show matches marked as viable')
 @click.option(
     '--sort', '-s',
     default='quality_score',
@@ -215,12 +213,13 @@ def info(cage_id: int):
     help='Sort results by metric'
 )
 @click.option('--limit', '-l', default=20, type=int, help='Maximum number of results')
-def find(cage_id: int, pc_ideal: float, pc_tolerance: float, max_price: Optional[float], min_price: Optional[float], only_viable: bool, sort: str, limit: int):
+def find(cage_id: int, pc_ideal: float, pc_tolerance: float, max_price: Optional[float], min_price: Optional[float], sort: str, limit: int):
     """
     Find best guest matches for a cage.
 
     Results are evaluated based on packing coefficient (geometric fit),
-    price, and other metrics.
+    price, and other metrics. --pc-ideal/--pc-tolerance set the search
+    window itself (defaulting to the app's standard PC target).
 
     Default packing coefficient ranges:
         0.0-0.3: Loose fit
@@ -236,7 +235,7 @@ def find(cage_id: int, pc_ideal: float, pc_tolerance: float, max_price: Optional
     """
     logger.info(
         f"Finding matches for cage {cage_id}: pc={pc_ideal} ± {pc_tolerance}, "
-        f"price=${min_price}–${max_price}, only_viable={only_viable}, sort={sort}, limit={limit}"
+        f"price=${min_price}–${max_price}, sort={sort}, limit={limit}"
     )
     init_db()
 
@@ -251,7 +250,6 @@ def find(cage_id: int, pc_ideal: float, pc_tolerance: float, max_price: Optional
                 pc_tolerance=pc_tolerance,
                 max_price=max_price,
                 min_price=min_price,
-                only_viable=only_viable,
                 sort_by=sort,
                 limit=limit
             )

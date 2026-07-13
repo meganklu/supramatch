@@ -8,5 +8,15 @@ CageCavityCalc
 # Molecular analysis
 openbabel-wheel>=3.1.1
 
+# External chemical data (PubChem, vendor pricing)
+requests>=2.28.0
+# Our fork (github.com/meganklu/ChemPrice): v1 MolPort API, batched MCule
+# quotes, pandas 2.x fix, v4 Chemspace API. Pinned to a commit, not a branch,
+# so installs stay reproducible -- bump the SHA by hand when new fixes land on the fork's main.
+# After bumping, `pip install -r requirements.txt` alone won't pick it up in an
+# existing env (pip sees "chemprice" already installed and skips it) -- see
+# README.md's "Updating an existing environment" for the force-reinstall step.
+chemprice @ git+https://github.com/meganklu/ChemPrice.git@39e391c798ca5a2b203d8b90c6e011f49a17e61b
+
 # Utilities
 python-dotenv>=1.0.0

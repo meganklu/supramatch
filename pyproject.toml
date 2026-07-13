@@ -20,6 +20,8 @@ dependencies = [
     "rdkit",
     "click>=8.0.0",
     "click-spinner>=0.1.10",
+    "requests>=2.28.0",
+    "chemprice @ git+https://github.com/meganklu/ChemPrice.git@39e391c798ca5a2b203d8b90c6e011f49a17e61b",
 ]
 
 [project.urls]

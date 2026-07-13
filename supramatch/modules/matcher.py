@@ -5,12 +5,19 @@ Evaluation Criteria:
     - Packing Coefficient (PC): Geometric fit (0.55 ± 0.09 optimal)
     - Price per Gram ($/g): Cost efficiency
     - Quality Score: Combined metric (0-100)
+
+Note:
+    Matches only ever store packing_coefficient. is_viable and quality_score
+    are computed properties on Match (see supramatch.models.match) so they
+    never go stale relative to the app's current config or the latest price
+    data -- there's no separate "rescore" step after a `price lookup` run.
 """
 
 import logging
 from typing import List, Optional
 from supramatch.db import queries
 from supramatch.db.database import get_connection, close_connection
+from supramatch.discovery.price_lookup import PriceLookup
 from supramatch.models.cage import Cage
 from supramatch.models.guest import Guest
 from supramatch.models.match import Match
@@ -31,16 +38,14 @@ class MatchingEngine:
     def __init__(self):
         self.conn = get_connection()
 
-        # Load config parameters
+        # Search defaults (overridable per-call in match_guests_to_cage)
         self.pc_ideal_default = HG_MATCH_CONFIG["pc_ideal_default"]
         self.pc_tolerance_default = HG_MATCH_CONFIG["pc_tolerance_default"]
-        self.viable_threshold = HG_MATCH_CONFIG["viable_threshold"]
 
         logger.debug(
             f"MatchingEngine initialized with config: "
             f"pc_ideal_default={self.pc_ideal_default}, "
-            f"pc_tolerance_default={self.pc_tolerance_default}, "
-            f"viable_threshold={self.viable_threshold}"
+            f"pc_tolerance_default={self.pc_tolerance_default}"
         )
 
     # ==================== CALCULATIONS ====================
@@ -75,53 +80,6 @@ class MatchingEngine:
         logger.info(f"Calculated packing coefficent: {pc_str}")
         return pc  # Cap at 1.0
 
-    def calculate_quality_score(
-        self,
-        packing_coefficient: float,
-        guest_price: float
-    ) -> float:
-        """
-        Calculate quality score for a host-guest pair (0-100).
-
-        Balances two factors:
-        1. Geometric fit (packing coefficient): 0-50 points
-           - Optimal range 0.55 ± 0.09 gets full points
-           - Outside this range score decreases
-
-        2. Cost efficiency (price per gram): 0-50 points
-           - Lower price = higher score
-           - Assumes typical range $0.10-$100.00/g
-
-        Args:
-            packing_coefficient: Volume ratio (0–1)
-            guest_price: Cost in USD per gram ($/g)
-
-        Returns:
-            float: Quality score (0-100), higher is better
-        """
-        logger.debug(f"Calculating quality score: packing_coefficient={packing_coefficient}, guest_price={guest_price}")
-
-        # PC score: optimal at 0.55 ± 0.09
-        if abs(packing_coefficient - self.pc_ideal_default) <= self.pc_tolerance_default:
-            # Full points in optimal range
-            pc_score = 50
-        else:
-            # Scale based on amount outside of ideal range
-            pc_score = 50 - (abs(packing_coefficient - self.pc_ideal_default) * 100)
-
-        # Price score: lower price = higher score
-        if guest_price:
-            # Normalize on typical range $0.10-$100.00/g
-            # At $0.10/g = ~50 points
-            # At $10.00/g = 45 points
-            # At $100.00/g = 0 points
-            # Formula: 50 - (price * 0.5)
-            price_score = max(0, 50 - (guest_price * 0.5))
-        else:
-            price_score = 25  # Neutral if no price
-
-        return pc_score + price_score
-
     # ==================== LOOKUPS ====================
 
     def get_cage(self, cage_id: int) -> Optional[Cage]:
@@ -140,7 +98,7 @@ class MatchingEngine:
         guest_id: int
     ) -> Match:
         """
-        Create a match and calculate metrics.
+        Create a match from geometry alone (no price required).
 
         Args:
             cage_id: Cage ID.
@@ -177,27 +135,14 @@ class MatchingEngine:
         pc_str = format_packing_coefficient(pc)
         logger.debug(f"Packing coefficient calculated: {pc_str}")
 
-        # Calculate quality score
-        quality_score = self.calculate_quality_score(pc, guest.price_per_gram)
-        logger.debug(f"Quality score calculated: {quality_score}")
-
-        # Determine viability (default: optimal range 0.55 ± 0.09, config viability threshold)
-        if self.viable_threshold:
-            is_viable = abs(pc - self.pc_ideal_default) <= self.pc_tolerance_default
-        else:
-            is_viable = True
-        logger.debug(f"Match viable: {is_viable}")
-
         match = queries.create_match(
             self.conn,
             cage_id=cage_id,
             guest_id=guest_id,
             packing_coefficient=pc,
-            quality_score=quality_score,
-            is_viable=is_viable
         )
 
-        logger.info(f"Created match: {cage.name} + {guest.name} (PC={pc_str}, quality={quality_score})")
+        logger.info(f"Created match: {cage.name} + {guest.name} (PC={pc_str})")
         return match
 
     def match_guests_to_cage(
@@ -207,7 +152,6 @@ class MatchingEngine:
         pc_tolerance: float = None,
         max_price: float = None,
         min_price: float = None,
-        only_viable: bool = True,
         sort_by: str = 'quality_score',
         limit: int = None
     ) -> List[Match]:
@@ -216,11 +160,12 @@ class MatchingEngine:
 
         Args:
             cage_id: Cage ID.
-            pc_ideal: Ideal packing coefficient.
-            pc_tolerance: Packing coefficient range tolerance.
+            pc_ideal: Ideal packing coefficient (search window center; defaults
+                to the app's standard PC target if not given).
+            pc_tolerance: Packing coefficient range tolerance (search window width;
+                defaults to the app's standard tolerance if not given).
             max_price: Maximum guest price per gram ($/g).
             min_price: Minimum guest price per gram ($/g).
-            only_viable: Only return matches marked as viable.
             sort_by: Sort key:
                 - 'quality_score': Combined metric (descending) (default)
                 - 'packing_coefficient': Geometric fit (closest to ideal packing coefficient)
@@ -232,6 +177,16 @@ class MatchingEngine:
 
         Raises:
             ValueError: If cage not found.
+
+        Note:
+            There's no separate "only viable" filter here: the pc_ideal/pc_tolerance
+            window *is* the viability concept for a search (it defaults to the app's
+            standard range). Layering a second, fixed-default viability check on top
+            would either be redundant with that window (when using the defaults) or
+            silently return nothing when searching a different window that doesn't
+            overlap the default range. Match.is_viable is still available for
+            display, and is used as a filter by `price lookup`, which has no
+            competing search-window concept to conflict with.
 
         Example:
             >>> engine = MatchingEngine()
@@ -247,7 +202,7 @@ class MatchingEngine:
             ...     print(f"{match.guest_name}: {match.quality_score:.1f}/100")
         """
         logger.info(f"Finding matches for cage_id={cage_id}")
-        logger.debug(f"Filters: pc_ideal={pc_ideal}, pc_tolerance={pc_tolerance}, max_price={max_price}, min_price={min_price}, only_viable={only_viable}, sort_by={sort_by}, limit={limit}")
+        logger.debug(f"Filters: pc_ideal={pc_ideal}, pc_tolerance={pc_tolerance}, max_price={max_price}, min_price={min_price}, sort_by={sort_by}, limit={limit}")
 
         # Use defaults from config if not provided
         if pc_ideal is None:
@@ -270,10 +225,17 @@ class MatchingEngine:
             pc_tolerance,
             max_price=max_price,
             min_price=min_price,
-            only_viable=only_viable,
-            sort_by=sort_by,
-            limit=limit,
         )
+
+        if sort_by == 'packing_coefficient':
+            matches.sort(key=lambda m: abs(m.packing_coefficient - pc_ideal))
+        elif sort_by == 'price':
+            matches.sort(key=lambda m: (m.guest_price_per_gram is None, m.guest_price_per_gram))
+        else:
+            matches.sort(key=lambda m: m.quality_score, reverse=True)
+
+        if limit:
+            matches = matches[:limit]
 
         logger.info(f"Found {len(matches)} match(es) for {cage.name}")
 
@@ -333,6 +295,61 @@ class MatchingEngine:
         """Get all matches for a cage, regardless of fit or viability."""
         logger.debug(f"Retrieving all matches for cage_id={cage_id}")
         return queries.list_matches_for_cage(self.conn, cage_id)
+
+    def price_viable_matches(
+        self,
+        cage_id: int,
+        only_viable: bool = True,
+        refresh: bool = False,
+        price_lookup: Optional[PriceLookup] = None,
+    ) -> dict:
+        """
+        Look up and store vendor prices for guests in this cage's matches.
+
+        This is the match-domain counterpart to GuestCalculator.create_guest_from_pubchem:
+        both the `price lookup` CLI command and any library/script usage
+        should call this rather than pulling matches apart and driving
+        PriceLookup themselves, so there's one place that decides which
+        guests are worth pricing for a cage.
+
+        Args:
+            cage_id: Cage ID.
+            only_viable: Only price guests in matches that are viable by the
+                app's default PC target -- the whole point of gating on
+                viability is to avoid spending API calls on guests that are
+                clearly a poor geometric fit.
+            refresh: Re-query prices even for guests with a recent quote already stored.
+            price_lookup: Reuse an existing PriceLookup instance (e.g. across
+                several cages in one script) instead of creating a fresh one --
+                avoids re-validating vendor credentials (a live network check)
+                on every call.
+
+        Returns:
+            dict: {'queried': N, 'skipped': N, 'priced': N}, as returned by
+            PriceLookup.lookup_and_store.
+
+        Example:
+            >>> engine = MatchingEngine()
+            >>> results = engine.price_viable_matches(cage_id=1)
+            >>> print(f"Priced {results['priced']} guest(s)")
+        """
+        logger.debug(f"Pricing matches for cage_id={cage_id}: only_viable={only_viable}, refresh={refresh}")
+
+        matches = self.list_matches_for_cage(cage_id)
+        if only_viable:
+            matches = [m for m in matches if m.is_viable]
+
+        guest_ids = list({m.guest_id for m in matches})
+        if not guest_ids:
+            logger.info(f"No guests to price for cage_id={cage_id}")
+            return {"queried": 0, "skipped": 0, "priced": 0}
+
+        guests = queries.get_guests_by_ids(self.conn, guest_ids)
+
+        if price_lookup is None:
+            price_lookup = PriceLookup()
+
+        return price_lookup.lookup_and_store(self.conn, guests, refresh=refresh)
 
     def get_match(self, match_id: int) -> Optional[Match]:
         """Get a specific match."""

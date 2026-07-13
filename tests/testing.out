@@ -1,4 +1,4 @@
-2026-07-09 14:18:50 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:05:07 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
 Usage: supramatch [OPTIONS] COMMAND [ARGS]...
 
   Supramatch: Match metal-organic cages to guest molecules.
@@ -9,21 +9,25 @@ Usage: supramatch [OPTIONS] COMMAND [ARGS]...
   For help on a specific command:     supramatch <command> --help
 
   Examples:     supramatch cage load data/cage.pdb --name MyCage
-  supramatch guest import guests.csv     supramatch match find 1 --pc-ideal
-  0.55 --pc-tolerance 0.15
+  supramatch guest fetch aspirin     supramatch guest import guests.csv
+  supramatch match find 1 --pc-ideal 0.55 --pc-tolerance 0.15     supramatch
+  price lookup --cage 1     supramatch pipeline run --cage-pdb data/cage.pdb
+  --guest aspirin
 
 Options:
   --version  Show the version and exit.
   --help     Show this message and exit.
 
 Commands:
-  cage   Commands for managing cages.
-  db     Commands for database management.
-  guest  Commands for managing guest molecules.
-  match  Commands for finding host-guest matches.
-2026-07-09 14:19:00 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+  cage      Commands for managing cages.
+  db        Commands for database management.
+  guest     Commands for managing guest molecules.
+  match     Commands for finding host-guest matches.
+  pipeline  Run the full pipeline: resolve a cage and guests, create...
+  price     Commands for vendor price lookups (Mcule, Molport, and...
+2026-07-13 15:05:18 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
 supramatch, version 0.1.0
-2026-07-09 14:19:10 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:05:28 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
 Usage: supramatch cage [OPTIONS] COMMAND [ARGS]...
 
   Commands for managing cages.
@@ -39,7 +43,7 @@ Commands:
   list    List all cages in database.
   load    Load a cage from a PDB file.
   show    Show details for a specific cage.
-2026-07-09 14:19:19 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:05:46 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
 Usage: supramatch guest [OPTIONS] COMMAND [ARGS]...
 
   Commands for managing guest molecules.
@@ -53,11 +57,12 @@ Options:
 Commands:
   calculate  Calculate properties for a molecule from SMILES.
   delete     Delete a guest from the database.
+  fetch      Fetch a compound from PubChem and add it as a guest.
   import     Import guests from a file.
   list       List guests in database.
   load       Load a single guest molecule into the database.
   search     Search for guests by name.
-2026-07-09 14:19:29 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:06:00 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
 Usage: supramatch match [OPTIONS] COMMAND [ARGS]...
 
   Commands for finding host-guest matches.
@@ -72,7 +77,30 @@ Commands:
   create  Create matches between a cage and guests.
   find    Find best guest matches for a cage.
   info    Show matching information for a cage.
-2026-07-09 14:19:40 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:06:13 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+Usage: supramatch price [OPTIONS] COMMAND [ARGS]...
+
+  Commands for vendor price lookups (Mcule, Molport, and Chemspace via
+  ChemPrice).
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  list    Show stored vendor price quotes for a guest.
+  lookup  Look up vendor prices via ChemPrice (Mcule, Molport, Chemspace).
+2026-07-13 15:06:25 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+Usage: supramatch pipeline [OPTIONS] COMMAND [ARGS]...
+
+  Run the full pipeline: resolve a cage and guests, create matches, look up
+  prices for the viable ones, and show ranked results.
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  run  Run the full pipeline in one command.
+2026-07-13 15:06:36 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
 Usage: supramatch db [OPTIONS] COMMAND [ARGS]...
 
   Commands for database management.
@@ -87,345 +115,466 @@ Commands:
   init    Initialize the database.
   reset   Reset the database.
   status  Show database status.
-2026-07-09 14:19:50 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:19:59 - supramatch.cli.commands.db - INFO - Initializing database
+2026-07-13 15:06:46 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:06:57 - supramatch.cli.commands.db - INFO - Initializing database
 Initializing database...
-2026-07-09 14:19:59 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:19:59 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:06:57 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:06:57 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
 ✓ Database initialized successfully
 
-2026-07-09 14:19:59 - supramatch.cli.commands.db - INFO - Database initialized successfully
-2026-07-09 14:20:00 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:20:08 - supramatch.cli.commands.guest - INFO - Loading guest: Benzene (SMILES: c1ccccc1)
-2026-07-09 14:20:08 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:20:09 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:06:57 - supramatch.cli.commands.db - INFO - Database initialized successfully
+2026-07-13 15:06:58 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+WARNING: This will erase ALL data! Continue? [y/N]: 2026-07-13 15:07:08 - supramatch.cli.commands.db - WARNING - Resetting database - destructive operation
+Resetting database...
+2026-07-13 15:07:08 - supramatch.db.database - WARNING - Resetting database...
+2026-07-13 15:07:08 - supramatch.db.database - WARNING - Dropping all tables from database
+2026-07-13 15:07:08 - supramatch.db.database - WARNING - All tables dropped from database
+2026-07-13 15:07:08 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:07:08 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:07:08 - supramatch.db.database - INFO - Database reset complete
+✓ Database reset successfully
+
+2026-07-13 15:07:08 - supramatch.cli.commands.db - INFO - Database reset successfully
+2026-07-13 15:07:09 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:07:19 - supramatch.cli.commands.db - INFO - Initializing database
+Initializing database...
+2026-07-13 15:07:19 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:07:19 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+✓ Database initialized successfully
+
+2026-07-13 15:07:19 - supramatch.cli.commands.db - INFO - Database initialized successfully
+2026-07-13 15:07:20 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:07:31 - supramatch.cli.commands.db - INFO - Initializing database
+Initializing database...
+2026-07-13 15:07:31 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:07:31 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+✓ Database initialized successfully
+
+2026-07-13 15:07:31 - supramatch.cli.commands.db - INFO - Database initialized successfully
+2026-07-13 15:07:32 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:07:42 - supramatch.cli.commands.guest - INFO - Loading guest: Benzene (SMILES: c1ccccc1)
+2026-07-13 15:07:42 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:07:42 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
 Creating guest molecule Benzene...
-2026-07-09 14:20:09 - supramatch.modules.guest_calc - INFO - Creating guest: Benzene
-2026-07-09 14:20:09 - supramatch.modules.guest_calc - INFO - Successfully calculated volume for SMILES: 83.58 Å³
-2026-07-09 14:20:09 - supramatch.modules.guest_calc - INFO - Created guest 'Benzene': Volume=83.58 Å³
+2026-07-13 15:07:42 - supramatch.modules.guest_calc - INFO - Creating guest: Benzene
+2026-07-13 15:07:42 - supramatch.modules.guest_calc - INFO - Successfully calculated volume for SMILES: 83.58 Å³
+2026-07-13 15:07:42 - supramatch.modules.guest_calc - INFO - Created guest 'Benzene': Volume=83.58 Å³
 ✓ Loaded guest 'Benzene'
   SMILES: c1ccccc1
   Volume: 83.58 Å³
   CAS: 71-43-2
-  Supplier: Sigma-Aldrich
-  Price: $0.59
   State: liquid
-  URL: https://www.sigmaaldrich.com/...
 
-2026-07-09 14:20:09 - supramatch.cli.commands.guest - INFO - Successfully loaded guest: Benzene
-2026-07-09 14:20:10 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-WARNING: This will erase ALL data! Continue? [y/N]: 2026-07-09 14:20:19 - supramatch.cli.commands.db - WARNING - Resetting database - destructive operation
+2026-07-13 15:07:42 - supramatch.cli.commands.guest - INFO - Successfully loaded guest: Benzene
+2026-07-13 15:07:43 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+WARNING: This will erase ALL data! Continue? [y/N]: 2026-07-13 15:07:53 - supramatch.cli.commands.db - WARNING - Resetting database - destructive operation
 Resetting database...
-2026-07-09 14:20:19 - supramatch.db.database - WARNING - Resetting database...
-2026-07-09 14:20:19 - supramatch.db.database - WARNING - Dropping all tables from database
-2026-07-09 14:20:19 - supramatch.db.database - WARNING - All tables dropped from database
-2026-07-09 14:20:19 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:20:19 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:20:19 - supramatch.db.database - INFO - Database reset complete
+2026-07-13 15:07:53 - supramatch.db.database - WARNING - Resetting database...
+2026-07-13 15:07:53 - supramatch.db.database - WARNING - Dropping all tables from database
+2026-07-13 15:07:53 - supramatch.db.database - WARNING - All tables dropped from database
+2026-07-13 15:07:53 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:07:54 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:07:54 - supramatch.db.database - INFO - Database reset complete
 ✓ Database reset successfully
 
-2026-07-09 14:20:19 - supramatch.cli.commands.db - INFO - Database reset successfully
-2026-07-09 14:20:20 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:20:29 - supramatch.cli.commands.cage - INFO - Loading cage from: ../data/cages/zd001_Picture_1.pdb
-2026-07-09 14:20:29 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:20:29 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:07:54 - supramatch.cli.commands.db - INFO - Database reset successfully
+2026-07-13 15:07:55 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:08:05 - supramatch.cli.commands.cage - INFO - Loading cage from: ./data/zd001_Picture_1.pdb
+2026-07-13 15:08:05 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:08:06 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
 Calculating cavity volume...
-2026-07-09 14:20:29 - supramatch.modules.cage_calc - INFO - Creating cage from PDB file: ../data/cages/zd001_Picture_1.pdb
-2026-07-09 14:20:29 - CageCavityCalc.log - INFO - --- Reading the file ---
-2026-07-09 14:20:30 - CageCavityCalc.log - INFO - --- Calculation of the cavity ---
-2026-07-09 14:20:30 - CageCavityCalc.log - INFO - center_of_mass= [  0.74475559 -11.99129756  15.28278653]
-2026-07-09 14:20:30 - CageCavityCalc.log - INFO - Box x min/max= -7.879000, 9.325000
-2026-07-09 14:20:30 - CageCavityCalc.log - INFO - Box y min/max= -20.053000, -3.834000
-2026-07-09 14:20:30 - CageCavityCalc.log - INFO - Box z min/max= 6.769000, 23.763000
-2026-07-09 14:20:41 - CageCavityCalc.log - INFO - Summing the volume
-2026-07-09 14:20:41 - CageCavityCalc.log - INFO - Memory for fast volume calculations ~1.4 GB
-2026-07-09 14:20:41 - CageCavityCalc.log - INFO - Slightly slower summing of the grid
-2026-07-09 14:20:46 - CageCavityCalc.log - INFO - Cage cavity volume = 329.45  A3
-2026-07-09 14:20:46 - CageCavityCalc.log - INFO - --- Total time 17 seconds ---
-2026-07-09 14:20:46 - supramatch.modules.cage_calc - INFO - Successfully calculated cavity volume: 329.45 Å³
-2026-07-09 14:20:47 - supramatch.modules.cage_calc - INFO - Created cage 'zd001; Picture 1' with volume 329.45 Å³
+2026-07-13 15:08:06 - supramatch.modules.cage_calc - INFO - Creating cage from PDB file: ./data/zd001_Picture_1.pdb
+2026-07-13 15:08:06 - CageCavityCalc.log - INFO - --- Reading the file ---
+2026-07-13 15:08:06 - CageCavityCalc.log - INFO - --- Calculation of the cavity ---
+2026-07-13 15:08:06 - CageCavityCalc.log - INFO - center_of_mass= [  0.74475559 -11.99129756  15.28278653]
+2026-07-13 15:08:06 - CageCavityCalc.log - INFO - Box x min/max= -7.879000, 9.325000
+2026-07-13 15:08:06 - CageCavityCalc.log - INFO - Box y min/max= -20.053000, -3.834000
+2026-07-13 15:08:06 - CageCavityCalc.log - INFO - Box z min/max= 6.769000, 23.763000
+2026-07-13 15:08:17 - CageCavityCalc.log - INFO - Summing the volume
+2026-07-13 15:08:17 - CageCavityCalc.log - INFO - Memory for fast volume calculations ~1.4 GB
+2026-07-13 15:08:17 - CageCavityCalc.log - INFO - Slightly slower summing of the grid
+2026-07-13 15:08:23 - CageCavityCalc.log - INFO - Cage cavity volume = 329.45  A3
+2026-07-13 15:08:23 - CageCavityCalc.log - INFO - --- Total time 17 seconds ---
+2026-07-13 15:08:23 - supramatch.modules.cage_calc - INFO - Successfully calculated cavity volume: 329.45 Å³
+2026-07-13 15:08:23 - supramatch.modules.cage_calc - INFO - Created cage 'zd001; Picture 1' with volume 329.45 Å³
 ✓ Loaded cage 'zd001; Picture 1'
   Volume: 329.45 Å³
-  PDB: /dartfs-hpc/rc/home/x/f007h8x/supramatch/tests/../data/cages/zd001_Picture_1.pdb
-2026-07-09 14:20:47 - supramatch.cli.commands.cage - INFO - Successfully loaded cage: zd001; Picture 1
-2026-07-09 14:20:48 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:20:58 - supramatch.cli.commands.cage - INFO - Loading cage from: ../data/cages/zd001_Picture_1.pdb
-2026-07-09 14:20:58 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:20:58 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+  PDB: /dartfs-hpc/rc/home/x/f007h8x/supramatch/tests/data/zd001_Picture_1.pdb
+2026-07-13 15:08:23 - supramatch.cli.commands.cage - INFO - Successfully loaded cage: zd001; Picture 1
+2026-07-13 15:08:25 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:08:35 - supramatch.cli.commands.cage - INFO - Loading cage from: ./data/zd001_Picture_1.pdb
+2026-07-13 15:08:35 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:08:35 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
 Calculating cavity volume...
-2026-07-09 14:20:58 - supramatch.modules.cage_calc - INFO - Creating cage from PDB file: ../data/cages/zd001_Picture_1.pdb
-2026-07-09 14:20:58 - CageCavityCalc.log - INFO - --- Reading the file ---
-2026-07-09 14:20:58 - CageCavityCalc.log - INFO - --- Calculation of the cavity ---
-2026-07-09 14:20:58 - CageCavityCalc.log - INFO - center_of_mass= [  0.74475559 -11.99129756  15.28278653]
-2026-07-09 14:20:58 - CageCavityCalc.log - INFO - Box x min/max= -7.879000, 9.325000
-2026-07-09 14:20:58 - CageCavityCalc.log - INFO - Box y min/max= -20.053000, -3.834000
-2026-07-09 14:20:58 - CageCavityCalc.log - INFO - Box z min/max= 6.769000, 23.763000
-2026-07-09 14:21:09 - CageCavityCalc.log - INFO - Summing the volume
-2026-07-09 14:21:09 - CageCavityCalc.log - INFO - Memory for fast volume calculations ~1.4 GB
-2026-07-09 14:21:09 - CageCavityCalc.log - INFO - Slightly slower summing of the grid
-2026-07-09 14:21:15 - CageCavityCalc.log - INFO - Cage cavity volume = 329.45  A3
-2026-07-09 14:21:15 - CageCavityCalc.log - INFO - --- Total time 17 seconds ---
-2026-07-09 14:21:15 - supramatch.modules.cage_calc - INFO - Successfully calculated cavity volume: 329.45 Å³
-2026-07-09 14:21:15 - supramatch.modules.cage_calc - INFO - Created cage 'copy' with volume 329.45 Å³
+2026-07-13 15:08:35 - supramatch.modules.cage_calc - INFO - Creating cage from PDB file: ./data/zd001_Picture_1.pdb
+2026-07-13 15:08:35 - CageCavityCalc.log - INFO - --- Reading the file ---
+2026-07-13 15:08:35 - CageCavityCalc.log - INFO - --- Calculation of the cavity ---
+2026-07-13 15:08:35 - CageCavityCalc.log - INFO - center_of_mass= [  0.74475559 -11.99129756  15.28278653]
+2026-07-13 15:08:35 - CageCavityCalc.log - INFO - Box x min/max= -7.879000, 9.325000
+2026-07-13 15:08:35 - CageCavityCalc.log - INFO - Box y min/max= -20.053000, -3.834000
+2026-07-13 15:08:35 - CageCavityCalc.log - INFO - Box z min/max= 6.769000, 23.763000
+2026-07-13 15:08:46 - CageCavityCalc.log - INFO - Summing the volume
+2026-07-13 15:08:46 - CageCavityCalc.log - INFO - Memory for fast volume calculations ~1.4 GB
+2026-07-13 15:08:46 - CageCavityCalc.log - INFO - Slightly slower summing of the grid
+2026-07-13 15:08:52 - CageCavityCalc.log - INFO - Cage cavity volume = 329.45  A3
+2026-07-13 15:08:52 - CageCavityCalc.log - INFO - --- Total time 17 seconds ---
+2026-07-13 15:08:52 - supramatch.modules.cage_calc - INFO - Successfully calculated cavity volume: 329.45 Å³
+2026-07-13 15:08:52 - supramatch.modules.cage_calc - INFO - Created cage 'copy' with volume 329.45 Å³
 ✓ Loaded cage 'copy'
   Volume: 329.45 Å³
-  PDB: /dartfs-hpc/rc/home/x/f007h8x/supramatch/tests/../data/cages/zd001_Picture_1.pdb
-2026-07-09 14:21:15 - supramatch.cli.commands.cage - INFO - Successfully loaded cage: copy
-2026-07-09 14:21:16 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:21:25 - supramatch.cli.commands.cage - INFO - Listing cage(s) from database
-2026-07-09 14:21:25 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:21:25 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:21:25 - supramatch.modules.cage_calc - INFO - Found 2 cage(s) in database
+  PDB: /dartfs-hpc/rc/home/x/f007h8x/supramatch/tests/data/zd001_Picture_1.pdb
+2026-07-13 15:08:52 - supramatch.cli.commands.cage - INFO - Successfully loaded cage: copy
+2026-07-13 15:08:53 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:09:02 - supramatch.cli.commands.cage - INFO - Listing cage(s) from database
+2026-07-13 15:09:02 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:09:02 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:09:02 - supramatch.modules.cage_calc - INFO - Found 2 cage(s) in database
 
 Found 2 cage(s):
 
 ID    Name                      Volume          PDB File
 --------------------------------------------------------------------------------
-1     zd001; Picture 1          329.45 Å³       ..../data/cages/zd001_Picture_1.pdb
-2     copy                      329.45 Å³       ..../data/cages/zd001_Picture_1.pdb
-2026-07-09 14:21:25 - supramatch.cli.commands.cage - INFO - Listed 2 cage(s)
-2026-07-09 14:21:27 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:21:36 - supramatch.cli.commands.cage - INFO - Showing cage details: 1
-2026-07-09 14:21:36 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:21:36 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+1     zd001; Picture 1          329.45 Å³       ...h/tests/data/zd001_Picture_1.pdb
+2     copy                      329.45 Å³       ...h/tests/data/zd001_Picture_1.pdb
+2026-07-13 15:09:02 - supramatch.cli.commands.cage - INFO - Listed 2 cage(s)
+2026-07-13 15:09:03 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:09:12 - supramatch.cli.commands.cage - INFO - Listing cage(s) from database
+2026-07-13 15:09:12 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:09:12 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:09:12 - supramatch.modules.cage_calc - INFO - Found 2 cage(s) in database
+
+Found 1 cage(s):
+
+ID    Name                      Volume          PDB File
+--------------------------------------------------------------------------------
+1     zd001; Picture 1          329.45 Å³       ...h/tests/data/zd001_Picture_1.pdb
+2026-07-13 15:09:12 - supramatch.cli.commands.cage - INFO - Listed 1 cage(s)
+2026-07-13 15:09:13 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:09:23 - supramatch.cli.commands.cage - INFO - Showing cage details: 1
+2026-07-13 15:09:23 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:09:23 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
 
 Cage: zd001; Picture 1
   ID: 1
   Volume: 329.45 Å³
-  PDB: /dartfs-hpc/rc/home/x/f007h8x/supramatch/tests/../data/cages/zd001_Picture_1.pdb
-  Created: 2026-07-09 18:20:47
+  PDB: /dartfs-hpc/rc/home/x/f007h8x/supramatch/tests/data/zd001_Picture_1.pdb
+  Created: 2026-07-13 19:08:23
   Matches: 0
 
-2026-07-09 14:21:36 - supramatch.cli.commands.cage - INFO - Displayed cage 1
-2026-07-09 14:21:37 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:21:46 - supramatch.cli.commands.cage - INFO - Showing cage details: 2
-2026-07-09 14:21:46 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:21:46 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:09:23 - supramatch.cli.commands.cage - INFO - Displayed cage 1
+2026-07-13 15:09:24 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:09:33 - supramatch.cli.commands.cage - INFO - Showing cage details: 2
+2026-07-13 15:09:33 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:09:33 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
 
 Cage: copy
   ID: 2
   Volume: 329.45 Å³
-  PDB: /dartfs-hpc/rc/home/x/f007h8x/supramatch/tests/../data/cages/zd001_Picture_1.pdb
-  Created: 2026-07-09 18:21:15
+  PDB: /dartfs-hpc/rc/home/x/f007h8x/supramatch/tests/data/zd001_Picture_1.pdb
+  Created: 2026-07-13 19:08:52
   Matches: 0
 Recalculating volume...
-2026-07-09 14:21:46 - supramatch.modules.cage_calc - INFO - Recalculating volume for copy
-2026-07-09 14:21:46 - CageCavityCalc.log - INFO - --- Reading the file ---
-2026-07-09 14:21:46 - CageCavityCalc.log - INFO - --- Calculation of the cavity ---
-2026-07-09 14:21:46 - CageCavityCalc.log - INFO - center_of_mass= [  0.74475559 -11.99129756  15.28278653]
-2026-07-09 14:21:46 - CageCavityCalc.log - INFO - Box x min/max= -7.879000, 9.325000
-2026-07-09 14:21:46 - CageCavityCalc.log - INFO - Box y min/max= -20.053000, -3.834000
-2026-07-09 14:21:46 - CageCavityCalc.log - INFO - Box z min/max= 6.769000, 23.763000
-2026-07-09 14:21:58 - CageCavityCalc.log - INFO - Summing the volume
-2026-07-09 14:21:58 - CageCavityCalc.log - INFO - Memory for fast volume calculations ~1.4 GB
-2026-07-09 14:21:58 - CageCavityCalc.log - INFO - Slightly slower summing of the grid
-2026-07-09 14:22:04 - CageCavityCalc.log - INFO - Cage cavity volume = 329.45  A3
-2026-07-09 14:22:04 - CageCavityCalc.log - INFO - --- Total time 17 seconds ---
-2026-07-09 14:22:04 - supramatch.modules.cage_calc - INFO - Successfully calculated cavity volume: 329.45 Å³
-2026-07-09 14:22:04 - supramatch.modules.cage_calc - INFO - Updated copy volume from 329.45 Å³ to 329.45 Å³
+2026-07-13 15:09:33 - supramatch.modules.cage_calc - INFO - Recalculating volume for copy
+2026-07-13 15:09:33 - CageCavityCalc.log - INFO - --- Reading the file ---
+2026-07-13 15:09:34 - CageCavityCalc.log - INFO - --- Calculation of the cavity ---
+2026-07-13 15:09:34 - CageCavityCalc.log - INFO - center_of_mass= [  0.74475559 -11.99129756  15.28278653]
+2026-07-13 15:09:34 - CageCavityCalc.log - INFO - Box x min/max= -7.879000, 9.325000
+2026-07-13 15:09:34 - CageCavityCalc.log - INFO - Box y min/max= -20.053000, -3.834000
+2026-07-13 15:09:34 - CageCavityCalc.log - INFO - Box z min/max= 6.769000, 23.763000
+2026-07-13 15:09:45 - CageCavityCalc.log - INFO - Summing the volume
+2026-07-13 15:09:45 - CageCavityCalc.log - INFO - Memory for fast volume calculations ~1.4 GB
+2026-07-13 15:09:45 - CageCavityCalc.log - INFO - Slightly slower summing of the grid
+2026-07-13 15:09:51 - CageCavityCalc.log - INFO - Cage cavity volume = 329.45  A3
+2026-07-13 15:09:51 - CageCavityCalc.log - INFO - --- Total time 17 seconds ---
+2026-07-13 15:09:51 - supramatch.modules.cage_calc - INFO - Successfully calculated cavity volume: 329.45 Å³
+2026-07-13 15:09:51 - supramatch.modules.cage_calc - INFO - Updated copy volume from 329.45 Å³ to 329.45 Å³
 ✓ Updated volume: 329.45 Å³
-2026-07-09 14:22:04 - supramatch.cli.commands.cage - INFO - Recalculated cage volume: 329.453125
+2026-07-13 15:09:51 - supramatch.cli.commands.cage - INFO - Recalculated cage volume: 329.453125
 
-2026-07-09 14:22:04 - supramatch.cli.commands.cage - INFO - Displayed cage 2
-2026-07-09 14:22:05 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:22:15 - supramatch.cli.commands.guest - INFO - Calculating properties for SMILES: c1ccccc1
+2026-07-13 15:09:51 - supramatch.cli.commands.cage - INFO - Displayed cage 2
+2026-07-13 15:09:52 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:10:02 - supramatch.cli.commands.guest - INFO - Calculating properties for SMILES: c1ccccc1
 Calculating molecular properties...
-2026-07-09 14:22:15 - supramatch.modules.guest_calc - INFO - Successfully calculated volume for SMILES: 83.58 Å³
+2026-07-13 15:10:02 - supramatch.modules.guest_calc - INFO - Successfully calculated volume for SMILES: 83.58 Å³
 ✓ Molecular Properties:
   SMILES: c1ccccc1
   Volume: 83.58 Å³
-2026-07-09 14:22:15 - supramatch.cli.commands.guest - INFO - Calculated: volume=83.58 Å³
-2026-07-09 14:22:16 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:22:26 - supramatch.cli.commands.guest - INFO - Importing guests from file: data/guests.json
-2026-07-09 14:22:26 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:22:26 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:10:02 - supramatch.cli.commands.guest - INFO - Calculated: volume=83.58 Å³
+2026-07-13 15:10:03 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:10:11 - supramatch.cli.commands.guest - INFO - Importing guests from file: ./data/guests.json
+2026-07-13 15:10:11 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:10:12 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
 Importing guests...
-2026-07-09 14:22:26 - supramatch.modules.guest_calc - INFO - Creating guest: Benzene
-2026-07-09 14:22:26 - supramatch.modules.guest_calc - INFO - Successfully calculated volume for SMILES: 83.58 Å³
-2026-07-09 14:22:26 - supramatch.modules.guest_calc - INFO - Created guest 'Benzene': Volume=83.58 Å³
-2026-07-09 14:22:26 - supramatch.modules.guest_calc - INFO - Creating guest: cis-Decalin
-2026-07-09 14:22:26 - supramatch.modules.guest_calc - INFO - Successfully calculated volume for SMILES: 156.58 Å³
-2026-07-09 14:22:26 - supramatch.modules.guest_calc - INFO - Created guest 'cis-Decalin': Volume=156.58 Å³
-2026-07-09 14:22:26 - supramatch.modules.guest_calc - INFO - Imported 2 guest(s) from JSON
+2026-07-13 15:10:12 - supramatch.modules.guest_calc - INFO - Creating guest: Benzene
+2026-07-13 15:10:12 - supramatch.modules.guest_calc - INFO - Successfully calculated volume for SMILES: 83.58 Å³
+2026-07-13 15:10:12 - supramatch.modules.guest_calc - INFO - Created guest 'Benzene': Volume=83.58 Å³
+2026-07-13 15:10:12 - supramatch.modules.guest_calc - INFO - Creating guest: cis-Decalin
+2026-07-13 15:10:12 - supramatch.modules.guest_calc - INFO - Successfully calculated volume for SMILES: 156.81 Å³
+2026-07-13 15:10:12 - supramatch.modules.guest_calc - INFO - Created guest 'cis-Decalin': Volume=156.81 Å³
+2026-07-13 15:10:12 - supramatch.modules.guest_calc - INFO - Imported 2 guest(s) from JSON
 ✓ Imported 2 guest(s)
 
 Imported guest(s):
-Name                           Volume          Price          
+Name                           Volume          Formula        
 ------------------------------------------------------------
-Benzene                        83.58 Å³        $0.59          
-cis-Decalin                    156.58 Å³       $12.00         
-2026-07-09 14:22:26 - supramatch.cli.commands.guest - INFO - Successfully imported 2 guest(s)
-2026-07-09 14:22:27 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:22:37 - supramatch.cli.commands.guest - INFO - Loading guest: Benzene (SMILES: c1ccccc1)
-2026-07-09 14:22:37 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:22:37 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+Benzene                        83.58 Å³        C6H6           
+cis-Decalin                    156.81 Å³       N/A            
+2026-07-13 15:10:12 - supramatch.cli.commands.guest - INFO - Successfully imported 2 guest(s)
+2026-07-13 15:10:13 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:10:21 - supramatch.cli.commands.guest - INFO - Importing guests from file: ./data/guests.csv
+2026-07-13 15:10:21 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:10:21 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+Importing guests...
+2026-07-13 15:10:21 - supramatch.modules.guest_calc - INFO - Creating guest: Cyclohexane
+2026-07-13 15:10:21 - supramatch.modules.guest_calc - INFO - Successfully calculated volume for SMILES: 100.66 Å³
+2026-07-13 15:10:21 - supramatch.modules.guest_calc - INFO - Created guest 'Cyclohexane': Volume=100.66 Å³
+2026-07-13 15:10:21 - supramatch.modules.guest_calc - INFO - Creating guest: Adamantane
+2026-07-13 15:10:21 - supramatch.modules.guest_calc - INFO - Successfully calculated volume for SMILES: 145.82 Å³
+2026-07-13 15:10:22 - supramatch.modules.guest_calc - INFO - Created guest 'Adamantane': Volume=145.82 Å³
+2026-07-13 15:10:22 - supramatch.modules.guest_calc - INFO - Imported 2 guest(s) from CSV
+✓ Imported 2 guest(s)
+
+Imported guest(s):
+Name                           Volume          Formula        
+------------------------------------------------------------
+Cyclohexane                    100.66 Å³       C6H12          
+Adamantane                     145.82 Å³       C10H16         
+2026-07-13 15:10:22 - supramatch.cli.commands.guest - INFO - Successfully imported 2 guest(s)
+2026-07-13 15:10:23 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:10:31 - supramatch.cli.commands.guest - INFO - Importing guests from file: ./data/guests.xml
+2026-07-13 15:10:31 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:10:31 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+Importing guests...
+2026-07-13 15:10:31 - supramatch.modules.guest_calc - INFO - Creating guest: Menthol
+2026-07-13 15:10:31 - supramatch.modules.guest_calc - INFO - Successfully calculated volume for SMILES: 176.91 Å³
+2026-07-13 15:10:31 - supramatch.modules.guest_calc - INFO - Created guest 'Menthol': Volume=176.91 Å³
+2026-07-13 15:10:31 - supramatch.modules.guest_calc - INFO - Creating guest: Camphor
+2026-07-13 15:10:31 - supramatch.modules.guest_calc - INFO - Successfully calculated volume for SMILES: 161.27 Å³
+2026-07-13 15:10:31 - supramatch.modules.guest_calc - INFO - Created guest 'Camphor': Volume=161.27 Å³
+2026-07-13 15:10:31 - supramatch.modules.guest_calc - INFO - Imported 2 guest(s) from XML
+✓ Imported 2 guest(s)
+
+Imported guest(s):
+Name                           Volume          Formula        
+------------------------------------------------------------
+Menthol                        176.91 Å³       C10H20O        
+Camphor                        161.27 Å³       N/A            
+2026-07-13 15:10:31 - supramatch.cli.commands.guest - INFO - Successfully imported 2 guest(s)
+2026-07-13 15:10:33 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:10:41 - supramatch.cli.commands.guest - INFO - Loading guest: Benzene (SMILES: c1ccccc1)
+2026-07-13 15:10:41 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:10:41 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
 Creating guest molecule Benzene...
-2026-07-09 14:22:37 - supramatch.modules.guest_calc - INFO - Creating guest: Benzene
-2026-07-09 14:22:37 - supramatch.modules.guest_calc - WARNING - Guest with CAS number '71-43-2' already exists in database
+2026-07-13 15:10:41 - supramatch.modules.guest_calc - INFO - Creating guest: Benzene
+2026-07-13 15:10:41 - supramatch.modules.guest_calc - WARNING - Guest with CAS number '71-43-2' already exists in database
 ✗ Error: Guest with CAS number '71-43-2' already exists in database
-2026-07-09 14:22:37 - supramatch.cli.commands.guest - ERROR - Failed to load guest: Guest with CAS number '71-43-2' already exists in database
+2026-07-13 15:10:41 - supramatch.cli.commands.guest - ERROR - Failed to load guest: Guest with CAS number '71-43-2' already exists in database
 Aborted!
-2026-07-09 14:22:38 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:10:43 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
 Usage: supramatch guest load [OPTIONS] SMILES
 Try 'supramatch guest load --help' for help.
 
 Error: Missing option '--name' / '-n'.
-2026-07-09 14:22:49 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:22:59 - supramatch.cli.commands.guest - INFO - Loading guest: 1,3-Dibromoadamantane (SMILES: Br[C@]12C[C@@H]3C[C@H](C1)C[C@@](Br)(C3)C2)
-2026-07-09 14:22:59 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:22:59 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:10:53 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:11:03 - supramatch.cli.commands.guest - INFO - Loading guest: 1,3-Dibromoadamantane (SMILES: Br[C@]12C[C@@H]3C[C@H](C1)C[C@@](Br)(C3)C2)
+2026-07-13 15:11:03 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:11:03 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
 Creating guest molecule 1,3-Dibromoadamantane...
-2026-07-09 14:22:59 - supramatch.modules.guest_calc - INFO - Creating guest: 1,3-Dibromoadamantane
-2026-07-09 14:22:59 - supramatch.modules.guest_calc - INFO - Successfully calculated volume for SMILES: 185.91 Å³
-2026-07-09 14:22:59 - supramatch.modules.guest_calc - INFO - Created guest '1,3-Dibromoadamantane': Volume=185.91 Å³
+2026-07-13 15:11:03 - supramatch.modules.guest_calc - INFO - Creating guest: 1,3-Dibromoadamantane
+2026-07-13 15:11:03 - supramatch.modules.guest_calc - INFO - Successfully calculated volume for SMILES: 185.91 Å³
+2026-07-13 15:11:03 - supramatch.modules.guest_calc - INFO - Created guest '1,3-Dibromoadamantane': Volume=185.91 Å³
 ✓ Loaded guest '1,3-Dibromoadamantane'
   SMILES: Br[C@]12C[C@@H]3C[C@H](C1)C[C@@](Br)(C3)C2
   Volume: 185.91 Å³
 
-2026-07-09 14:22:59 - supramatch.cli.commands.guest - INFO - Successfully loaded guest: 1,3-Dibromoadamantane
-2026-07-09 14:23:00 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:23:10 - supramatch.cli.commands.guest - INFO - Loading guest: Toluene (SMILES: Cc1ccccc1)
-2026-07-09 14:23:10 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:23:10 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:11:03 - supramatch.cli.commands.guest - INFO - Successfully loaded guest: 1,3-Dibromoadamantane
+2026-07-13 15:11:04 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:11:13 - supramatch.cli.commands.guest - INFO - Loading guest: Toluene (SMILES: Cc1ccccc1)
+2026-07-13 15:11:13 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:11:14 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
 Creating guest molecule Toluene...
-2026-07-09 14:23:10 - supramatch.modules.guest_calc - INFO - Creating guest: Toluene
-2026-07-09 14:23:10 - supramatch.modules.guest_calc - INFO - Successfully calculated volume for SMILES: 100.22 Å³
-2026-07-09 14:23:10 - supramatch.modules.guest_calc - INFO - Created guest 'Toluene': Volume=100.22 Å³
+2026-07-13 15:11:14 - supramatch.modules.guest_calc - INFO - Creating guest: Toluene
+2026-07-13 15:11:14 - supramatch.modules.guest_calc - INFO - Successfully calculated volume for SMILES: 100.22 Å³
+2026-07-13 15:11:14 - supramatch.modules.guest_calc - INFO - Created guest 'Toluene': Volume=100.22 Å³
 ✓ Loaded guest 'Toluene'
   SMILES: Cc1ccccc1
   Volume: 100.22 Å³
   CAS: 108-88-3
-  Supplier: Sigma-Aldrich
-  Price: $0.45
   State: liquid
 
-2026-07-09 14:23:10 - supramatch.cli.commands.guest - INFO - Successfully loaded guest: Toluene
-2026-07-09 14:23:11 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:23:22 - supramatch.cli.commands.guest - INFO - Loading guest: Naphthalene (SMILES: c1cc2ccccc2cc1)
-2026-07-09 14:23:22 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:23:22 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:11:14 - supramatch.cli.commands.guest - INFO - Successfully loaded guest: Toluene
+2026-07-13 15:11:15 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:11:24 - supramatch.cli.commands.guest - INFO - Loading guest: Naphthalene (SMILES: c1cc2ccccc2cc1)
+2026-07-13 15:11:24 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:11:24 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
 Creating guest molecule Naphthalene...
-2026-07-09 14:23:22 - supramatch.modules.guest_calc - INFO - Creating guest: Naphthalene
-2026-07-09 14:23:22 - supramatch.modules.guest_calc - INFO - Successfully calculated volume for SMILES: 127.18 Å³
-2026-07-09 14:23:22 - supramatch.modules.guest_calc - INFO - Created guest 'Naphthalene': Volume=127.18 Å³
+2026-07-13 15:11:24 - supramatch.modules.guest_calc - INFO - Creating guest: Naphthalene
+2026-07-13 15:11:24 - supramatch.modules.guest_calc - INFO - Successfully calculated volume for SMILES: 127.18 Å³
+2026-07-13 15:11:25 - supramatch.modules.guest_calc - INFO - Created guest 'Naphthalene': Volume=127.18 Å³
 ✓ Loaded guest 'Naphthalene'
   SMILES: c1cc2ccccc2cc1
   Volume: 127.18 Å³
   CAS: 91-20-3
-  Supplier: Sigma-Aldrich
-  Price: $1.85
   State: solid
 
-2026-07-09 14:23:22 - supramatch.cli.commands.guest - INFO - Successfully loaded guest: Naphthalene
-2026-07-09 14:23:23 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:23:33 - supramatch.cli.commands.guest - INFO - Listing guest(s): supplier=None, limit=20
-2026-07-09 14:23:33 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:23:33 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:23:33 - supramatch.modules.guest_calc - INFO - Found 5 guest(s) in database
+2026-07-13 15:11:25 - supramatch.cli.commands.guest - INFO - Successfully loaded guest: Naphthalene
+2026-07-13 15:11:26 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:11:35 - supramatch.cli.commands.guest - INFO - Fetching guest from PubChem: aspirin
+2026-07-13 15:11:35 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:11:35 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+Looking up 'aspirin' on PubChem...
+2026-07-13 15:11:35 - supramatch.modules.guest_calc - INFO - Fetching guest from PubChem: aspirin
+2026-07-13 15:11:36 - supramatch.modules.guest_calc - INFO - Creating guest: Aspirin
+2026-07-13 15:11:36 - supramatch.modules.guest_calc - INFO - Successfully calculated volume for SMILES: 156.87 Å³
+2026-07-13 15:11:36 - supramatch.modules.guest_calc - INFO - Created guest 'Aspirin': Volume=156.87 Å³
+✓ Fetched guest 'Aspirin' (PubChem CID 2244)
+  SMILES: CC(=O)OC1=CC=CC=C1C(=O)O
+  Volume: 156.87 Å³
+  Molecular weight: 180.16 g/mol
+  Formula: C9H8O4
+  IUPAC name: 2-acetyloxybenzoic acid
+  CAS: 50-78-2
 
-Found 5 guest(s):
+2026-07-13 15:11:36 - supramatch.cli.commands.guest - INFO - Successfully fetched guest: Aspirin
+2026-07-13 15:11:37 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:11:47 - supramatch.cli.commands.guest - INFO - Fetching guest from PubChem: 50-78-2
+2026-07-13 15:11:47 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:11:47 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+Looking up '50-78-2' on PubChem...
+2026-07-13 15:11:47 - supramatch.modules.guest_calc - INFO - Fetching guest from PubChem: 50-78-2
+2026-07-13 15:11:47 - supramatch.modules.guest_calc - INFO - Creating guest: Aspirin (duplicate CAS test)
+2026-07-13 15:11:47 - supramatch.modules.guest_calc - WARNING - Guest with CAS number '50-78-2' already exists in database
+✗ Error: Guest with CAS number '50-78-2' already exists in database
+2026-07-13 15:11:47 - supramatch.cli.commands.guest - ERROR - Failed to fetch guest from PubChem: Guest with CAS number '50-78-2' already exists in database
+Aborted!
+2026-07-13 15:11:49 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:11:58 - supramatch.cli.commands.guest - INFO - Listing guest(s): limit=20
+2026-07-13 15:11:58 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:11:58 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:11:58 - supramatch.modules.guest_calc - INFO - Found 10 guest(s) in database
 
-ID    Name                      Volume          Price        Supplier
+Found 10 guest(s):
+
+ID    Name                      Volume          Formula      CAS
 --------------------------------------------------------------------------------
-1     Benzene                   83.58 Å³        $0.59        Sigma-Aldrich
-2     cis-Decalin               156.58 Å³       $12.00       Sigma-Aldrich
-3     1,3-Dibromoadamantane     185.91 Å³       N/A          N/A
-4     Toluene                   100.22 Å³       $0.45        Sigma-Aldrich
-5     Naphthalene               127.18 Å³       $1.85        Sigma-Aldrich
-2026-07-09 14:23:33 - supramatch.cli.commands.guest - INFO - Listed 5 guest(s)
-2026-07-09 14:23:34 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:23:43 - supramatch.cli.commands.guest - INFO - Listing guest(s): supplier=Sigma-Aldrich, limit=20
-2026-07-09 14:23:43 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:23:43 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-
-Found 4 guest(s):
-
-ID    Name                      Volume          Price        Supplier
---------------------------------------------------------------------------------
-1     Benzene                   83.58 Å³        $0.59        Sigma-Aldrich
-2     cis-Decalin               156.58 Å³       $12.00       Sigma-Aldrich
-4     Toluene                   100.22 Å³       $0.45        Sigma-Aldrich
-5     Naphthalene               127.18 Å³       $1.85        Sigma-Aldrich
-2026-07-09 14:23:43 - supramatch.cli.commands.guest - INFO - Listed 4 guest(s)
-2026-07-09 14:23:44 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:23:53 - supramatch.cli.commands.guest - INFO - Listing guest(s): supplier=None, limit=2
-2026-07-09 14:23:53 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:23:54 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:23:54 - supramatch.modules.guest_calc - INFO - Found 2 guest(s) in database
+1     Benzene                   83.58 Å³        C6H6         71-43-2
+2     cis-Decalin               156.81 Å³       N/A          493-01-6
+3     Cyclohexane               100.66 Å³       C6H12        110-82-7
+4     Adamantane                145.82 Å³       C10H16       281-23-2
+5     Menthol                   176.91 Å³       C10H20O      89-78-1
+6     Camphor                   161.27 Å³       N/A          76-22-2
+7     1,3-Dibromoadamantane     185.91 Å³       N/A          N/A
+8     Toluene                   100.22 Å³       N/A          108-88-3
+9     Naphthalene               127.18 Å³       N/A          91-20-3
+10    Aspirin                   156.87 Å³       C9H8O4       50-78-2
+2026-07-13 15:11:58 - supramatch.cli.commands.guest - INFO - Listed 10 guest(s)
+2026-07-13 15:12:00 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:12:11 - supramatch.cli.commands.guest - INFO - Listing guest(s): limit=2
+2026-07-13 15:12:11 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:12:11 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:12:11 - supramatch.modules.guest_calc - INFO - Found 2 guest(s) in database
 
 Found 2 guest(s):
 
-ID    Name                      Volume          Price        Supplier
+ID    Name                      Volume          Formula      CAS
 --------------------------------------------------------------------------------
-1     Benzene                   83.58 Å³        $0.59        Sigma-Aldrich
-2     cis-Decalin               156.58 Å³       $12.00       Sigma-Aldrich
-2026-07-09 14:23:54 - supramatch.cli.commands.guest - INFO - Listed 2 guest(s)
-2026-07-09 14:23:55 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:24:04 - supramatch.cli.commands.guest - INFO - Searching for guests: toluene
-2026-07-09 14:24:04 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:24:04 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+1     Benzene                   83.58 Å³        C6H6         71-43-2
+2     cis-Decalin               156.81 Å³       N/A          493-01-6
+2026-07-13 15:12:11 - supramatch.cli.commands.guest - INFO - Listed 2 guest(s)
+2026-07-13 15:12:12 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:12:21 - supramatch.cli.commands.guest - INFO - Searching for guests: toluene
+2026-07-13 15:12:21 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:12:21 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
 
 Found 1 guest(s) matching 'toluene':
 
-ID    Name                           Volume          Price       
+ID    Name                           Volume          Formula
 -----------------------------------------------------------------
-4     Toluene                        100.22 Å³       $0.45       
-2026-07-09 14:24:04 - supramatch.cli.commands.guest - INFO - Found 1 match(es)
-2026-07-09 14:24:05 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:24:14 - supramatch.cli.commands.guest - INFO - Searching for guests: adamantane
-2026-07-09 14:24:14 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:24:14 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+8     Toluene                        100.22 Å³       N/A
+2026-07-13 15:12:21 - supramatch.cli.commands.guest - INFO - Found 1 match(es)
+2026-07-13 15:12:22 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:12:31 - supramatch.cli.commands.guest - INFO - Searching for guests: adamantane
+2026-07-13 15:12:31 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:12:32 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
 
-Found 1 guest(s) matching 'adamantane':
+Found 2 guest(s) matching 'adamantane':
 
-ID    Name                           Volume          Price       
+ID    Name                           Volume          Formula
 -----------------------------------------------------------------
-3     1,3-Dibromoadamantane          185.91 Å³       N/A         
-2026-07-09 14:24:14 - supramatch.cli.commands.guest - INFO - Found 1 match(es)
-2026-07-09 14:24:15 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:24:25 - supramatch.cli.commands.match - INFO - Creating matches for cage 1
-2026-07-09 14:24:25 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:24:25 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+4     Adamantane                     145.82 Å³       C10H16
+7     1,3-Dibromoadamantane          185.91 Å³       N/A
+2026-07-13 15:12:32 - supramatch.cli.commands.guest - INFO - Found 2 match(es)
+2026-07-13 15:12:33 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:12:41 - supramatch.cli.commands.guest - INFO - Searching for guests: aspirin
+2026-07-13 15:12:41 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:12:41 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+
+Found 1 guest(s) matching 'aspirin':
+
+ID    Name                           Volume          Formula
+-----------------------------------------------------------------
+10    Aspirin                        156.87 Å³       C9H8O4
+2026-07-13 15:12:41 - supramatch.cli.commands.guest - INFO - Found 1 match(es)
+2026-07-13 15:12:42 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:12:51 - supramatch.cli.commands.guest - INFO - Searching for guests: nonexistent-guest-xyz
+2026-07-13 15:12:51 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:12:51 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+No guests found matching 'nonexistent-guest-xyz'
+2026-07-13 15:12:51 - supramatch.cli.commands.guest - INFO - No matches for: nonexistent-guest-xyz
+2026-07-13 15:12:52 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:13:00 - supramatch.cli.commands.match - INFO - Creating matches for cage 1
+2026-07-13 15:13:00 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:13:00 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
 Creating matches for cage 'zd001; Picture 1'...
 
 Calculating matches...
-2026-07-09 14:24:25 - supramatch.modules.matcher - INFO - Calculated packing coefficent: 0.254
-2026-07-09 14:24:26 - supramatch.modules.matcher - INFO - Created match: zd001; Picture 1 + Benzene (PC=0.254, quality=70.07310054541144)
-2026-07-09 14:24:26 - supramatch.modules.matcher - INFO - Calculated packing coefficent: 0.475
-2026-07-09 14:24:26 - supramatch.modules.matcher - INFO - Created match: zd001; Picture 1 + cis-Decalin (PC=0.475, quality=94.0)
-2026-07-09 14:24:26 - supramatch.modules.matcher - INFO - Calculated packing coefficent: 0.564
-2026-07-09 14:24:26 - supramatch.modules.matcher - INFO - Created match: zd001; Picture 1 + 1,3-Dibromoadamantane (PC=0.564, quality=75)
-2026-07-09 14:24:26 - supramatch.modules.matcher - INFO - Calculated packing coefficent: 0.304
-2026-07-09 14:24:26 - supramatch.modules.matcher - INFO - Created match: zd001; Picture 1 + Toluene (PC=0.304, quality=75.19632321555608)
-2026-07-09 14:24:26 - supramatch.modules.matcher - INFO - Calculated packing coefficent: 0.386
-2026-07-09 14:24:26 - supramatch.modules.matcher - INFO - Created match: zd001; Picture 1 + Naphthalene (PC=0.386, quality=82.67958145601139)
-2026-07-09 14:24:26 - supramatch.modules.matcher - INFO - Created matches for cage_id=1: 5 created, 0 skipped, 0 failed
+2026-07-13 15:13:00 - supramatch.modules.matcher - INFO - Calculated packing coefficent: 0.254
+2026-07-13 15:13:00 - supramatch.modules.matcher - INFO - Created match: zd001; Picture 1 + Benzene (PC=0.254)
+2026-07-13 15:13:00 - supramatch.modules.matcher - INFO - Calculated packing coefficent: 0.476
+2026-07-13 15:13:00 - supramatch.modules.matcher - INFO - Created match: zd001; Picture 1 + cis-Decalin (PC=0.476)
+2026-07-13 15:13:00 - supramatch.modules.matcher - INFO - Calculated packing coefficent: 0.306
+2026-07-13 15:13:00 - supramatch.modules.matcher - INFO - Created match: zd001; Picture 1 + Cyclohexane (PC=0.306)
+2026-07-13 15:13:00 - supramatch.modules.matcher - INFO - Calculated packing coefficent: 0.443
+2026-07-13 15:13:00 - supramatch.modules.matcher - INFO - Created match: zd001; Picture 1 + Adamantane (PC=0.443)
+2026-07-13 15:13:00 - supramatch.modules.matcher - INFO - Calculated packing coefficent: 0.537
+2026-07-13 15:13:00 - supramatch.modules.matcher - INFO - Created match: zd001; Picture 1 + Menthol (PC=0.537)
+2026-07-13 15:13:00 - supramatch.modules.matcher - INFO - Calculated packing coefficent: 0.490
+2026-07-13 15:13:01 - supramatch.modules.matcher - INFO - Created match: zd001; Picture 1 + Camphor (PC=0.490)
+2026-07-13 15:13:01 - supramatch.modules.matcher - INFO - Calculated packing coefficent: 0.564
+2026-07-13 15:13:01 - supramatch.modules.matcher - INFO - Created match: zd001; Picture 1 + 1,3-Dibromoadamantane (PC=0.564)
+2026-07-13 15:13:01 - supramatch.modules.matcher - INFO - Calculated packing coefficent: 0.304
+2026-07-13 15:13:01 - supramatch.modules.matcher - INFO - Created match: zd001; Picture 1 + Toluene (PC=0.304)
+2026-07-13 15:13:01 - supramatch.modules.matcher - INFO - Calculated packing coefficent: 0.386
+2026-07-13 15:13:01 - supramatch.modules.matcher - INFO - Created match: zd001; Picture 1 + Naphthalene (PC=0.386)
+2026-07-13 15:13:01 - supramatch.modules.matcher - INFO - Calculated packing coefficent: 0.476
+2026-07-13 15:13:01 - supramatch.modules.matcher - INFO - Created match: zd001; Picture 1 + Aspirin (PC=0.476)
+2026-07-13 15:13:01 - supramatch.modules.matcher - INFO - Created matches for cage_id=1: 10 created, 0 skipped, 0 failed
 ✓ Matches created:
-  Created:  5
+  Created:  10
   Skipped:  0 (already existed)
   Failed:   0
 
-Total matches for 'zd001; Picture 1': 5
+Total matches for 'zd001; Picture 1': 10
 
 Next step: supramatch match find 1
 
-2026-07-09 14:24:26 - supramatch.cli.commands.match - INFO - Successfully created 5 matches (0 skipped, 0 failed)
-2026-07-09 14:24:27 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:24:36 - supramatch.cli.commands.match - INFO - Creating matches for cage 2
-2026-07-09 14:24:36 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:24:36 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:13:01 - supramatch.cli.commands.match - INFO - Successfully created 10 matches (0 skipped, 0 failed)
+2026-07-13 15:13:02 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:13:12 - supramatch.cli.commands.match - INFO - Creating matches for cage 2
+2026-07-13 15:13:12 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:13:12 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
 Creating matches for cage 'copy'...
 
 Calculating matches...
-2026-07-09 14:24:36 - supramatch.modules.matcher - INFO - Calculated packing coefficent: 0.254
-2026-07-09 14:24:36 - supramatch.modules.matcher - INFO - Created match: copy + Benzene (PC=0.254, quality=70.07310054541144)
-2026-07-09 14:24:36 - supramatch.modules.matcher - INFO - Calculated packing coefficent: 0.564
-2026-07-09 14:24:36 - supramatch.modules.matcher - INFO - Created match: copy + 1,3-Dibromoadamantane (PC=0.564, quality=75)
-2026-07-09 14:24:36 - supramatch.modules.matcher - INFO - Calculated packing coefficent: 0.304
-2026-07-09 14:24:36 - supramatch.modules.matcher - INFO - Created match: copy + Toluene (PC=0.304, quality=75.19632321555608)
-2026-07-09 14:24:36 - supramatch.modules.matcher - INFO - Calculated packing coefficent: 0.386
-2026-07-09 14:24:36 - supramatch.modules.matcher - INFO - Created match: copy + Naphthalene (PC=0.386, quality=82.67958145601139)
-2026-07-09 14:24:36 - supramatch.modules.matcher - INFO - Created matches for cage_id=2: 4 created, 0 skipped, 0 failed
+2026-07-13 15:13:12 - supramatch.modules.matcher - INFO - Calculated packing coefficent: 0.254
+2026-07-13 15:13:12 - supramatch.modules.matcher - INFO - Created match: copy + Benzene (PC=0.254)
+2026-07-13 15:13:12 - supramatch.modules.matcher - INFO - Calculated packing coefficent: 0.306
+2026-07-13 15:13:12 - supramatch.modules.matcher - INFO - Created match: copy + Cyclohexane (PC=0.306)
+2026-07-13 15:13:12 - supramatch.modules.matcher - INFO - Calculated packing coefficent: 0.443
+2026-07-13 15:13:12 - supramatch.modules.matcher - INFO - Created match: copy + Adamantane (PC=0.443)
+2026-07-13 15:13:12 - supramatch.modules.matcher - INFO - Calculated packing coefficent: 0.537
+2026-07-13 15:13:12 - supramatch.modules.matcher - INFO - Created match: copy + Menthol (PC=0.537)
+2026-07-13 15:13:12 - supramatch.modules.matcher - INFO - Created matches for cage_id=2: 4 created, 0 skipped, 0 failed
 ✓ Matches created:
   Created:  4
   Skipped:  0 (already existed)
@@ -435,172 +584,583 @@ Total matches for 'copy': 4
 
 Next step: supramatch match find 2
 
-2026-07-09 14:24:36 - supramatch.cli.commands.match - INFO - Successfully created 4 matches (0 skipped, 0 failed)
-2026-07-09 14:24:38 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:24:46 - supramatch.cli.commands.match - INFO - Getting match info for cage 1
-2026-07-09 14:24:46 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:24:46 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:13:12 - supramatch.cli.commands.match - INFO - Successfully created 4 matches (0 skipped, 0 failed)
+2026-07-13 15:13:14 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:13:22 - supramatch.cli.commands.match - INFO - Getting match info for cage 1
+2026-07-13 15:13:22 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:13:22 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
 
 Match Information for Cage 'zd001; Picture 1':
 
-  Total Matches: 5
-  Optimal Fit (0.55 ± 0.09): 2
+  Total Matches: 10
+  Viable (0.55 ± 0.09): 5
 
 Packing Coefficient:
   Min: 0.254
   Max: 0.564
-  Avg: 0.397
-
-Guest Prices ($/g):
-  Min: $0.45
-  Max: $12.00
-  Avg: $3.72
+  Avg: 0.424
 
 Quality Scores:
-  Min: 70.1
-  Max: 94.0
-  Avg: 79.4
+  Min: 45.4
+  Max: 75.0
+  Avg: 64.4
 
-2026-07-09 14:24:46 - supramatch.cli.commands.match - INFO - Displayed match info for cage 1
-2026-07-09 14:24:48 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:24:57 - supramatch.cli.commands.match - INFO - Getting match info for cage 2
-2026-07-09 14:24:57 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:24:57 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:13:22 - supramatch.cli.commands.match - INFO - Displayed match info for cage 1
+2026-07-13 15:13:23 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:13:31 - supramatch.cli.commands.match - INFO - Getting match info for cage 2
+2026-07-13 15:13:31 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:13:32 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
 
 Match Information for Cage 'copy':
 
   Total Matches: 4
-  Optimal Fit (0.55 ± 0.09): 1
+  Viable (0.55 ± 0.09): 1
 
 Packing Coefficient:
   Min: 0.254
-  Max: 0.564
-  Avg: 0.377
-
-Guest Prices ($/g):
-  Min: $0.45
-  Max: $1.85
-  Avg: $0.96
+  Max: 0.537
+  Avg: 0.385
 
 Quality Scores:
-  Min: 70.1
-  Max: 82.7
-  Avg: 75.7
+  Min: 45.4
+  Max: 75.0
+  Avg: 58.8
 
-2026-07-09 14:24:57 - supramatch.cli.commands.match - INFO - Displayed match info for cage 2
-2026-07-09 14:24:58 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:25:08 - supramatch.cli.commands.match - INFO - Finding matches for cage 1: pc=0.5 ± 0.5, price=$None–$None, only_viable=False, sort=quality_score, limit=20
-2026-07-09 14:25:08 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:25:08 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:13:32 - supramatch.cli.commands.match - INFO - Displayed match info for cage 2
+2026-07-13 15:13:33 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:13:41 - supramatch.cli.commands.match - INFO - Finding matches for cage 1: pc=0.5 ± 0.5, price=$None–$None, sort=quality_score, limit=20
+2026-07-13 15:13:41 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:13:41 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
 Finding matches...
-2026-07-09 14:25:08 - supramatch.modules.matcher - INFO - Finding matches for cage_id=1
-2026-07-09 14:25:08 - supramatch.modules.matcher - INFO - Found 5 match(es) for zd001; Picture 1
+2026-07-13 15:13:41 - supramatch.modules.matcher - INFO - Finding matches for cage_id=1
+2026-07-13 15:13:41 - supramatch.modules.matcher - INFO - Found 10 match(es) for zd001; Picture 1
 
 Match(es) for cage 'zd001; Picture 1' (329.45 Å³):
 
 #    Guest Name                      PC        $/g    Score
 -----------------------------------------------------------------------------------------------
-1    cis-Decalin                  0.475     $12.00     94.0 
-2    Naphthalene                  0.386      $1.85     82.7 
-3    Toluene                      0.304      $0.45     75.2 
+1    cis-Decalin                  0.476        N/A     75.0 
+2    Menthol                      0.537        N/A     75.0 
+3    Camphor                      0.490        N/A     75.0 
 4    1,3-Dibromoadamantane        0.564        N/A     75.0 
-5    Benzene                      0.254      $0.59     70.1 
+5    Aspirin                      0.476        N/A     75.0 
+6    Adamantane                   0.443        N/A     64.3 
+7    Naphthalene                  0.386        N/A     58.6 
+8    Cyclohexane                  0.306        N/A     50.6 
+9    Toluene                      0.304        N/A     50.4 
+10   Benzene                      0.254        N/A     45.4 
 
-2026-07-09 14:25:08 - supramatch.cli.commands.match - INFO - Found 5 match(es) for cage 1
-2026-07-09 14:25:09 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:25:19 - supramatch.cli.commands.match - INFO - Finding matches for cage 1: pc=0.55 ± 1.0, price=$None–$None, only_viable=False, sort=packing_coefficient, limit=20
-2026-07-09 14:25:19 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:25:19 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:13:41 - supramatch.cli.commands.match - INFO - Found 10 match(es) for cage 1
+2026-07-13 15:13:42 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:13:51 - supramatch.cli.commands.match - INFO - Finding matches for cage 1: pc=0.55 ± 1.0, price=$None–$None, sort=packing_coefficient, limit=20
+2026-07-13 15:13:51 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:13:51 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
 Finding matches...
-2026-07-09 14:25:19 - supramatch.modules.matcher - INFO - Finding matches for cage_id=1
-2026-07-09 14:25:19 - supramatch.modules.matcher - INFO - Found 5 match(es) for zd001; Picture 1
+2026-07-13 15:13:51 - supramatch.modules.matcher - INFO - Finding matches for cage_id=1
+2026-07-13 15:13:51 - supramatch.modules.matcher - INFO - Found 10 match(es) for zd001; Picture 1
 
 Match(es) for cage 'zd001; Picture 1' (329.45 Å³):
 
 #    Guest Name                      PC        $/g    Score
 -----------------------------------------------------------------------------------------------
-1    1,3-Dibromoadamantane        0.564        N/A     75.0 
-2    cis-Decalin                  0.475     $12.00     94.0 
-3    Naphthalene                  0.386      $1.85     82.7 
-4    Toluene                      0.304      $0.45     75.2 
-5    Benzene                      0.254      $0.59     70.1 
+1    Menthol                      0.537        N/A     75.0 
+2    1,3-Dibromoadamantane        0.564        N/A     75.0 
+3    Camphor                      0.490        N/A     75.0 
+4    Aspirin                      0.476        N/A     75.0 
+5    cis-Decalin                  0.476        N/A     75.0 
+6    Adamantane                   0.443        N/A     64.3 
+7    Naphthalene                  0.386        N/A     58.6 
+8    Cyclohexane                  0.306        N/A     50.6 
+9    Toluene                      0.304        N/A     50.4 
+10   Benzene                      0.254        N/A     45.4 
 
-2026-07-09 14:25:19 - supramatch.cli.commands.match - INFO - Found 5 match(es) for cage 1
-2026-07-09 14:25:20 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:25:30 - supramatch.cli.commands.match - INFO - Finding matches for cage 2: pc=0.5 ± 0.5, price=$None–$None, only_viable=False, sort=price, limit=20
-2026-07-09 14:25:30 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:25:30 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:13:51 - supramatch.cli.commands.match - INFO - Found 10 match(es) for cage 1
+2026-07-13 15:13:52 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:14:00 - supramatch.cli.commands.match - INFO - Finding matches for cage 2: pc=0.5 ± 0.5, price=$None–$None, sort=price, limit=20
+2026-07-13 15:14:00 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:14:00 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
 Finding matches...
-2026-07-09 14:25:30 - supramatch.modules.matcher - INFO - Finding matches for cage_id=2
-2026-07-09 14:25:30 - supramatch.modules.matcher - INFO - Found 4 match(es) for copy
+2026-07-13 15:14:00 - supramatch.modules.matcher - INFO - Finding matches for cage_id=2
+2026-07-13 15:14:00 - supramatch.modules.matcher - INFO - Found 4 match(es) for copy
 
 Match(es) for cage 'copy' (329.45 Å³):
 
 #    Guest Name                      PC        $/g    Score
 -----------------------------------------------------------------------------------------------
-1    Toluene                      0.304      $0.45     75.2 
-2    Benzene                      0.254      $0.59     70.1 
-3    Naphthalene                  0.386      $1.85     82.7 
-4    1,3-Dibromoadamantane        0.564        N/A     75.0 
+1    Benzene                      0.254        N/A     45.4 
+2    Cyclohexane                  0.306        N/A     50.6 
+3    Adamantane                   0.443        N/A     64.3 
+4    Menthol                      0.537        N/A     75.0 
 
-2026-07-09 14:25:30 - supramatch.cli.commands.match - INFO - Found 4 match(es) for cage 2
-2026-07-09 14:25:32 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:25:41 - supramatch.cli.commands.db - INFO - Checking database status
-2026-07-09 14:25:41 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:25:41 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:14:00 - supramatch.cli.commands.match - INFO - Found 4 match(es) for cage 2
+2026-07-13 15:14:01 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:14:10 - supramatch.cli.commands.price - INFO - Looking up prices: cage_id=1, guest_id=None, all_matches=False, refresh=False
+2026-07-13 15:14:10 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:14:11 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+Looking up prices for cage 'zd001; Picture 1' matches...
+2026-07-13 15:14:12 - supramatch.discovery.price_lookup - INFO - Querying ChemPrice for 5 guest(s)
+Check: Molport api key is correct.
+Check: Chemspace api key is correct.
+Check: MCule api key is correct.
+
+Collecting Prices for given 5 SMILES from MolPort...
+Total: 5 prices for 5 molecules are found in MolPort.
+
+Collecting Prices for given 5 SMILES from ChemSpace...
+  0%|          | 0/5 [00:00<?, ?it/s] 20%|██        | 1/5 [00:01<00:04,  1.02s/it] 40%|████      | 2/5 [00:01<00:02,  1.18it/s] 60%|██████    | 3/5 [00:02<00:01,  1.34it/s] 80%|████████  | 4/5 [00:02<00:00,  1.45it/s]100%|██████████| 5/5 [00:03<00:00,  1.49it/s]100%|██████████| 5/5 [00:03<00:00,  1.38it/s]
+Total: 661 prices for 5 molecules are found in ChemSpace.
+
+Collecting ID's for given 5 SMILES from MCule...
+Total: 4 molecules and 4 conformers are found in MCule.
+
+Collecting Prices for given 5 IDs from MCule...
+  0%|          | 0/1 [00:00<?, ?it/s]100%|██████████| 1/1 [00:03<00:00,  3.54s/it]100%|██████████| 1/1 [00:03<00:00,  3.54s/it]
+2026-07-13 15:14:59 - supramatch.discovery.price_lookup - INFO - Stored prices for 5 of 5 queried guest(s)
+Total: 20 prices for 4 molecules are found in MCule.
+
+Merging Results from Molport, ChemSpace and MCule...
+Total: 686 prices for 5 molecules exist in the Merged file.
+
+Total time: 22.9246 seconds
+Vendor price collection is successfully done!
+✓ Price lookup complete:
+  Queried: 5
+  Skipped (recently priced): 0
+  Priced:  5
+
+2026-07-13 15:14:59 - supramatch.cli.commands.price - INFO - Price lookup complete: {'queried': 5, 'skipped': 0, 'priced': 5}
+2026-07-13 15:15:00 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:15:09 - supramatch.cli.commands.price - INFO - Looking up prices: cage_id=1, guest_id=None, all_matches=True, refresh=True
+2026-07-13 15:15:09 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:15:09 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+Looking up prices for cage 'zd001; Picture 1' matches...
+2026-07-13 15:15:10 - supramatch.discovery.price_lookup - INFO - Querying ChemPrice for 10 guest(s)
+Check: Molport api key is correct.
+Check: Chemspace api key is correct.
+Check: MCule api key is correct.
+
+Collecting Prices for given 10 SMILES from MolPort...
+Total: 8 prices for 8 molecules are found in MolPort.
+
+Collecting Prices for given 10 SMILES from ChemSpace...
+  0%|          | 0/10 [00:00<?, ?it/s] 10%|█         | 1/10 [00:00<00:05,  1.59it/s] 20%|██        | 2/10 [00:01<00:05,  1.58it/s] 30%|███       | 3/10 [00:01<00:04,  1.58it/s] 40%|████      | 4/10 [00:02<00:03,  1.61it/s] 50%|█████     | 5/10 [00:03<00:03,  1.53it/s] 60%|██████    | 6/10 [00:03<00:02,  1.59it/s] 70%|███████   | 7/10 [00:04<00:01,  1.59it/s] 80%|████████  | 8/10 [00:05<00:01,  1.59it/s] 90%|█████████ | 9/10 [00:05<00:00,  1.62it/s]100%|██████████| 10/10 [00:06<00:00,  1.59it/s]100%|██████████| 10/10 [00:06<00:00,  1.59it/s]
+Total: 911 prices for 10 molecules are found in ChemSpace.
+
+Collecting ID's for given 10 SMILES from MCule...
+Total: 8 molecules and 8 conformers are found in MCule.
+
+Collecting Prices for given 10 IDs from MCule...
+  0%|          | 0/1 [00:00<?, ?it/s]100%|██████████| 1/1 [00:04<00:00,  4.66s/it]100%|██████████| 1/1 [00:04<00:00,  4.66s/it]
+2026-07-13 15:16:15 - supramatch.discovery.price_lookup - INFO - Stored prices for 10 of 10 queried guest(s)
+Total: 40 prices for 8 molecules are found in MCule.
+
+Merging Results from Molport, ChemSpace and MCule...
+Total: 959 prices for 10 molecules exist in the Merged file.
+
+Total time: 29.2155 seconds
+Vendor price collection is successfully done!
+✓ Price lookup complete:
+  Queried: 10
+  Skipped (recently priced): 0
+  Priced:  10
+
+2026-07-13 15:16:15 - supramatch.cli.commands.price - INFO - Price lookup complete: {'queried': 10, 'skipped': 0, 'priced': 10}
+2026-07-13 15:16:17 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:16:27 - supramatch.cli.commands.price - INFO - Looking up prices: cage_id=None, guest_id=1, all_matches=False, refresh=False
+2026-07-13 15:16:27 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:16:27 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+Looking up prices for guest 'Benzene'...
+✓ Price lookup complete:
+  Queried: 0
+  Skipped (recently priced): 1
+  Priced:  0
+
+2026-07-13 15:16:27 - supramatch.cli.commands.price - INFO - Price lookup complete: {'queried': 0, 'skipped': 1, 'priced': 0}
+2026-07-13 15:16:28 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:16:37 - supramatch.cli.commands.price - INFO - Looking up prices: cage_id=None, guest_id=1, all_matches=False, refresh=True
+2026-07-13 15:16:37 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:16:37 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+Looking up prices for guest 'Benzene'...
+2026-07-13 15:16:38 - supramatch.discovery.price_lookup - INFO - Querying ChemPrice for 1 guest(s)
+Check: Molport api key is correct.
+Check: Chemspace api key is correct.
+Check: MCule api key is correct.
+
+Collecting Prices for given 1 SMILES from MolPort...
+Total: 1 prices for 1 molecules are found in MolPort.
+
+Collecting Prices for given 1 SMILES from ChemSpace...
+  0%|          | 0/1 [00:00<?, ?it/s]100%|██████████| 1/1 [00:00<00:00,  1.51it/s]100%|██████████| 1/1 [00:00<00:00,  1.51it/s]
+Total: 14 prices for 1 molecules are found in ChemSpace.
+
+Collecting ID's for given 1 SMILES from MCule...
+Total: 1 molecules and 1 conformers are found in MCule.
+
+Collecting Prices for given 1 IDs from MCule...
+  0%|          | 0/1 [00:00<?, ?it/s]100%|██████████| 1/1 [00:00<00:00,  2.83it/s]100%|██████████| 1/1 [00:00<00:00,  2.83it/s]
+2026-07-13 15:16:46 - supramatch.discovery.price_lookup - INFO - Stored prices for 1 of 1 queried guest(s)
+Total: 5 prices for 1 molecules are found in MCule.
+
+Merging Results from Molport, ChemSpace and MCule...
+Total: 20 prices for 1 molecules exist in the Merged file.
+
+Total time: 7.5021 seconds
+Vendor price collection is successfully done!
+✓ Price lookup complete:
+  Queried: 1
+  Skipped (recently priced): 0
+  Priced:  1
+
+2026-07-13 15:16:46 - supramatch.cli.commands.price - INFO - Price lookup complete: {'queried': 1, 'skipped': 0, 'priced': 1}
+2026-07-13 15:16:47 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:16:57 - supramatch.cli.commands.price - INFO - Listing prices for guest 1
+2026-07-13 15:16:57 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:16:57 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+
+Price quotes for 'Benzene':
+
+Source       Supplier             Purity            $/g        $/mol
+----------------------------------------------------------------------
+ChemSpace    Titan Scientific     99              $2.82          N/A
+ChemSpace    Titan Scientific     99              $2.82          N/A
+ChemSpace    Titan Scientific     99              $3.52          N/A
+ChemSpace    Titan Scientific     99              $3.52          N/A
+ChemSpace    Titan Scientific     99              $5.79          N/A
+ChemSpace    Titan Scientific     99              $5.79          N/A
+ChemSpace    Advanced ChemBlocks  97              $5.85          N/A
+ChemSpace    Advanced ChemBlocks  97              $5.85          N/A
+ChemSpace    Titan Scientific     99              $6.60          N/A
+ChemSpace    Titan Scientific     99              $6.60          N/A
+ChemSpace    Advanced ChemBlocks  97              $7.80          N/A
+ChemSpace    Advanced ChemBlocks  97              $7.80          N/A
+MCule        N/A                  90            $372.00          N/A
+MCule        N/A                  90            $372.00          N/A
+MCule        N/A                  90            $566.00          N/A
+MCule        N/A                  90            $566.00          N/A
+MCule        N/A                  90           $1190.00          N/A
+MCule        N/A                  90           $1190.00          N/A
+MCule        N/A                  90          $11900.00          N/A
+MCule        N/A                  90          $11900.00          N/A
+MCule        N/A                  90         $119000.00          N/A
+MCule        N/A                  90         $119000.00          N/A
+ChemSpace    Oakwood Products, In 99                N/A          N/A
+ChemSpace    Oakwood Products, In 99                N/A          N/A
+ChemSpace    Oakwood Products, In 99                N/A          N/A
+ChemSpace    AK Scientific Inc.   99                N/A          N/A
+ChemSpace    AboundChem           99                N/A          N/A
+ChemSpace    AK Scientific Inc.   99                N/A          N/A
+ChemSpace    Oakwood Products, In 99                N/A          N/A
+ChemSpace    AK Scientific Inc.   99                N/A          N/A
+Molport      Sigma-Aldrich        97                N/A          N/A
+ChemSpace    Oakwood Products, In 99                N/A          N/A
+ChemSpace    Oakwood Products, In 99                N/A          N/A
+ChemSpace    Oakwood Products, In 99                N/A          N/A
+ChemSpace    AK Scientific Inc.   99                N/A          N/A
+ChemSpace    AboundChem           99                N/A          N/A
+ChemSpace    AK Scientific Inc.   99                N/A          N/A
+ChemSpace    Oakwood Products, In 99                N/A          N/A
+ChemSpace    AK Scientific Inc.   99                N/A          N/A
+Molport      Sigma-Aldrich        97                N/A          N/A
+
+2026-07-13 15:16:57 - supramatch.cli.commands.price - INFO - Listed 40 price quote(s) for guest 1
+2026-07-13 15:16:58 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:17:08 - supramatch.cli.commands.match - INFO - Finding matches for cage 1: pc=0.55 ± 0.09, price=$None–$None, sort=quality_score, limit=20
+2026-07-13 15:17:08 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:17:08 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+Finding matches...
+2026-07-13 15:17:08 - supramatch.modules.matcher - INFO - Finding matches for cage_id=1
+2026-07-13 15:17:08 - supramatch.modules.matcher - INFO - Found 5 match(es) for zd001; Picture 1
+
+Match(es) for cage 'zd001; Picture 1' (329.45 Å³):
+
+#    Guest Name                      PC        $/g    Score
+-----------------------------------------------------------------------------------------------
+1    Camphor                      0.490      $0.03    100.0 
+2    Aspirin                      0.476      $0.12     99.9 
+3    Menthol                      0.537      $0.13     99.9 
+4    cis-Decalin                  0.476      $0.25     99.9 
+5    1,3-Dibromoadamantane        0.564      $0.37     99.8 
+
+2026-07-13 15:17:08 - supramatch.cli.commands.match - INFO - Found 5 match(es) for cage 1
+2026-07-13 15:17:09 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:17:19 - supramatch.cli.commands.pipeline - INFO - Running pipeline: cage_pdb=None, cage_id=1, guest_queries=(), guest_ids=(1, 2), all_matches=True, refresh_prices=False, pc_ideal=0.55, pc_tolerance=0.09, sort=quality_score, limit=5
+Running pipeline (this may take a while -- PubChem/vendor lookups are rate-limited)...
+2026-07-13 15:17:19 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:17:19 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:17:19 - supramatch.modules.matcher - INFO - Created matches for cage_id=1: 0 created, 2 skipped, 0 failed
+2026-07-13 15:17:19 - supramatch.pipeline - INFO - Pricing: 0 priced, 10 skipped, 0 queried
+2026-07-13 15:17:19 - supramatch.modules.matcher - INFO - Finding matches for cage_id=1
+2026-07-13 15:17:19 - supramatch.modules.matcher - INFO - Found 5 match(es) for zd001; Picture 1
+✓ Pipeline complete
+
+Match(es) for cage 'zd001; Picture 1' (329.45 Å³):
+
+#    Guest Name                      PC        $/g    Score
+-----------------------------------------------------------------------------------------------
+1    Camphor                      0.490      $0.03    100.0 
+2    Aspirin                      0.476      $0.12     99.9 
+3    Menthol                      0.537      $0.13     99.9 
+4    cis-Decalin                  0.476      $0.25     99.9 
+5    1,3-Dibromoadamantane        0.564      $0.37     99.8 
+
+2026-07-13 15:17:19 - supramatch.cli.commands.pipeline - INFO - Pipeline complete: 5 match(es)
+2026-07-13 15:17:20 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:17:30 - supramatch.cli.commands.pipeline - INFO - Running pipeline: cage_pdb=None, cage_id=1, guest_queries=(), guest_ids=(1, 3), all_matches=False, refresh_prices=True, pc_ideal=0.5, pc_tolerance=0.5, sort=price, limit=20
+Running pipeline (this may take a while -- PubChem/vendor lookups are rate-limited)...
+2026-07-13 15:17:30 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:17:30 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:17:30 - supramatch.modules.matcher - INFO - Created matches for cage_id=1: 0 created, 2 skipped, 0 failed
+2026-07-13 15:17:31 - supramatch.discovery.price_lookup - INFO - Querying ChemPrice for 5 guest(s)
+Check: Molport api key is correct.
+Check: Chemspace api key is correct.
+Check: MCule api key is correct.
+
+Collecting Prices for given 5 SMILES from MolPort...
+Total: 5 prices for 5 molecules are found in MolPort.
+
+Collecting Prices for given 5 SMILES from ChemSpace...
+  0%|          | 0/5 [00:00<?, ?it/s] 20%|██        | 1/5 [00:00<00:02,  1.45it/s] 40%|████      | 2/5 [00:01<00:02,  1.43it/s] 60%|██████    | 3/5 [00:02<00:01,  1.50it/s] 80%|████████  | 4/5 [00:02<00:00,  1.55it/s]100%|██████████| 5/5 [00:03<00:00,  1.58it/s]100%|██████████| 5/5 [00:03<00:00,  1.54it/s]
+Total: 661 prices for 5 molecules are found in ChemSpace.
+
+Collecting ID's for given 5 SMILES from MCule...
+Total: 4 molecules and 4 conformers are found in MCule.
+
+Collecting Prices for given 5 IDs from MCule...
+  0%|          | 0/1 [00:00<?, ?it/s]100%|██████████| 1/1 [00:03<00:00,  3.05s/it]100%|██████████| 1/1 [00:03<00:00,  3.05s/it]
+2026-07-13 15:18:21 - supramatch.discovery.price_lookup - INFO - Stored prices for 5 of 5 queried guest(s)
+2026-07-13 15:18:21 - supramatch.pipeline - INFO - Pricing: 5 priced, 0 skipped, 5 queried
+2026-07-13 15:18:21 - supramatch.modules.matcher - INFO - Finding matches for cage_id=1
+2026-07-13 15:18:21 - supramatch.modules.matcher - INFO - Found 10 match(es) for zd001; Picture 1
+Total: 20 prices for 4 molecules are found in MCule.
+
+Merging Results from Molport, ChemSpace and MCule...
+Total: 686 prices for 5 molecules exist in the Merged file.
+
+Total time: 22.0460 seconds
+Vendor price collection is successfully done!
+✓ Pipeline complete
+
+Match(es) for cage 'zd001; Picture 1' (329.45 Å³):
+
+#    Guest Name                      PC        $/g    Score
+-----------------------------------------------------------------------------------------------
+1    Adamantane                   0.443      $0.02     89.3 
+2    Cyclohexane                  0.306      $0.03     75.5 
+3    Camphor                      0.490      $0.03    100.0 
+4    Naphthalene                  0.386      $0.07     83.6 
+5    Aspirin                      0.476      $0.12     99.9 
+6    Menthol                      0.537      $0.13     99.9 
+7    cis-Decalin                  0.476      $0.25     99.9 
+8    1,3-Dibromoadamantane        0.564      $0.37     99.8 
+9    Benzene                      0.254      $2.82     69.0 
+10   Toluene                      0.304    $372.00     25.4 
+
+2026-07-13 15:18:21 - supramatch.cli.commands.pipeline - INFO - Pipeline complete: 10 match(es)
+2026-07-13 15:18:23 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:18:34 - supramatch.cli.commands.pipeline - INFO - Running pipeline: cage_pdb=./data/zd001_Picture_1.pdb, cage_id=None, guest_queries=('caffeine', 'ibuprofen'), guest_ids=(), all_matches=False, refresh_prices=False, pc_ideal=0.55, pc_tolerance=0.09, sort=quality_score, limit=20
+Running pipeline (this may take a while -- PubChem/vendor lookups are rate-limited)...
+2026-07-13 15:18:34 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:18:34 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:18:34 - supramatch.modules.cage_calc - INFO - Creating cage from PDB file: ./data/zd001_Picture_1.pdb
+2026-07-13 15:18:34 - CageCavityCalc.log - INFO - --- Reading the file ---
+2026-07-13 15:18:35 - CageCavityCalc.log - INFO - --- Calculation of the cavity ---
+2026-07-13 15:18:35 - CageCavityCalc.log - INFO - center_of_mass= [  0.74475559 -11.99129756  15.28278653]
+2026-07-13 15:18:35 - CageCavityCalc.log - INFO - Box x min/max= -7.879000, 9.325000
+2026-07-13 15:18:35 - CageCavityCalc.log - INFO - Box y min/max= -20.053000, -3.834000
+2026-07-13 15:18:35 - CageCavityCalc.log - INFO - Box z min/max= 6.769000, 23.763000
+2026-07-13 15:18:45 - CageCavityCalc.log - INFO - Summing the volume
+2026-07-13 15:18:45 - CageCavityCalc.log - INFO - Memory for fast volume calculations ~1.4 GB
+2026-07-13 15:18:45 - CageCavityCalc.log - INFO - Slightly slower summing of the grid
+2026-07-13 15:18:51 - CageCavityCalc.log - INFO - Cage cavity volume = 329.45  A3
+2026-07-13 15:18:51 - CageCavityCalc.log - INFO - --- Total time 17 seconds ---
+2026-07-13 15:18:51 - supramatch.modules.cage_calc - INFO - Successfully calculated cavity volume: 329.45 Å³
+2026-07-13 15:18:51 - supramatch.modules.cage_calc - INFO - Created cage 'Pipeline Cage' with volume 329.45 Å³
+2026-07-13 15:18:51 - supramatch.modules.guest_calc - INFO - Fetching guest from PubChem: caffeine
+2026-07-13 15:18:52 - supramatch.modules.guest_calc - INFO - Creating guest: Caffeine
+2026-07-13 15:18:52 - supramatch.modules.guest_calc - INFO - Successfully calculated volume for SMILES: 166.57 Å³
+2026-07-13 15:18:52 - supramatch.modules.guest_calc - INFO - Created guest 'Caffeine': Volume=166.57 Å³
+2026-07-13 15:18:52 - supramatch.modules.guest_calc - INFO - Fetching guest from PubChem: ibuprofen
+2026-07-13 15:18:53 - supramatch.modules.guest_calc - INFO - Creating guest: Ibuprofen, (+-)-
+2026-07-13 15:18:53 - supramatch.modules.guest_calc - INFO - Successfully calculated volume for SMILES: 212.82 Å³
+2026-07-13 15:18:53 - supramatch.modules.guest_calc - INFO - Created guest 'Ibuprofen, (+-)-': Volume=212.82 Å³
+2026-07-13 15:18:53 - supramatch.modules.matcher - INFO - Calculated packing coefficent: 0.506
+2026-07-13 15:18:53 - supramatch.modules.matcher - INFO - Created match: Pipeline Cage + Caffeine (PC=0.506)
+2026-07-13 15:18:53 - supramatch.modules.matcher - INFO - Calculated packing coefficent: 0.646
+2026-07-13 15:18:54 - supramatch.modules.matcher - INFO - Created match: Pipeline Cage + Ibuprofen, (+-)- (PC=0.646)
+2026-07-13 15:18:54 - supramatch.modules.matcher - INFO - Created matches for cage_id=3: 2 created, 0 skipped, 0 failed
+2026-07-13 15:18:55 - supramatch.discovery.price_lookup - INFO - Querying ChemPrice for 1 guest(s)
+Check: Molport api key is correct.
+Check: Chemspace api key is correct.
+Check: MCule api key is correct.
+
+Collecting Prices for given 1 SMILES from MolPort...
+Total: 1 prices for 1 molecules are found in MolPort.
+
+Collecting Prices for given 1 SMILES from ChemSpace...
+  0%|          | 0/1 [00:00<?, ?it/s]100%|██████████| 1/1 [00:00<00:00,  1.59it/s]100%|██████████| 1/1 [00:00<00:00,  1.59it/s]
+Total: 69 prices for 1 molecules are found in ChemSpace.
+
+Collecting ID's for given 1 SMILES from MCule...
+Total: 1 molecules and 1 conformers are found in MCule.
+
+Collecting Prices for given 1 IDs from MCule...
+  0%|          | 0/1 [00:00<?, ?it/s]100%|██████████| 1/1 [00:01<00:00,  1.86s/it]100%|██████████| 1/1 [00:01<00:00,  1.86s/it]
+2026-07-13 15:19:09 - supramatch.discovery.price_lookup - INFO - Stored prices for 1 of 1 queried guest(s)
+2026-07-13 15:19:09 - supramatch.pipeline - INFO - Pricing: 1 priced, 0 skipped, 1 queried
+2026-07-13 15:19:09 - supramatch.modules.matcher - INFO - Finding matches for cage_id=3
+2026-07-13 15:19:09 - supramatch.modules.matcher - INFO - Found 1 match(es) for Pipeline Cage
+Total: 5 prices for 1 molecules are found in MCule.
+
+Merging Results from Molport, ChemSpace and MCule...
+Total: 75 prices for 1 molecules exist in the Merged file.
+
+Total time: 11.1672 seconds
+Vendor price collection is successfully done!
+✓ Pipeline complete
+
+Match(es) for cage 'Pipeline Cage' (329.45 Å³):
+
+#    Guest Name                      PC        $/g    Score
+-----------------------------------------------------------------------------------------------
+1    Caffeine                     0.506      $0.09    100.0 
+
+2026-07-13 15:19:09 - supramatch.cli.commands.pipeline - INFO - Pipeline complete: 1 match(es)
+2026-07-13 15:19:10 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:19:20 - supramatch.cli.commands.db - INFO - Checking database status
+2026-07-13 15:19:20 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:19:20 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
 
 Database Status:
-  Cage(s): 2
-  Guest(s): 5
-  Match(es): 9
+  Cage(s): 3
+  Guest(s): 12
+  Match(es): 16
+  Price quote(s): 2426
 
-2026-07-09 14:25:41 - supramatch.cli.commands.db - INFO - Database status: 2 cage(s), 5 guest(s), 9 match(es)
-2026-07-09 14:25:42 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-Are you sure you want to delete this guest? This will also delete all associated matches. [y/N]: 2026-07-09 14:25:51 - supramatch.cli.commands.guest - INFO - Deleting guest: 1
-2026-07-09 14:25:51 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:25:52 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:25:52 - supramatch.modules.guest_calc - INFO - Deleted guest 'Benzene'
+2026-07-13 15:19:20 - supramatch.cli.commands.db - INFO - Database status: 3 cage(s), 12 guest(s), 16 match(es), 2426 price quote(s)
+2026-07-13 15:19:21 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:19:30 - supramatch.cli.commands.cage - INFO - Showing cage details: 999
+2026-07-13 15:19:30 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:19:30 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+✗ Cage 999 not found
+2026-07-13 15:19:30 - supramatch.cli.commands.cage - WARNING - Cage 999 not found
+Aborted!
+2026-07-13 15:19:32 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+Usage: supramatch cage load [OPTIONS] PDB_FILE
+Try 'supramatch cage load --help' for help.
+
+Error: Invalid value for 'PDB_FILE': Path './data/does_not_exist.pdb' does not exist.
+2026-07-13 15:19:42 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:19:51 - supramatch.cli.commands.guest - INFO - Loading guest: fake (SMILES: not-a-valid-smiles)
+2026-07-13 15:19:51 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:19:51 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+Creating guest molecule fake...
+2026-07-13 15:19:51 - supramatch.modules.guest_calc - INFO - Creating guest: fake
+[15:19:51] SMILES Parse Error: syntax error while parsing: not-a-valid-smiles
+[15:19:51] SMILES Parse Error: check for mistakes around position 3:
+[15:19:51] not-a-valid-smiles
+[15:19:51] ~~^
+[15:19:51] SMILES Parse Error: Failed parsing SMILES 'not-a-valid-smiles' for input: 'not-a-valid-smiles'
+2026-07-13 15:19:51 - supramatch.modules.guest_calc - ERROR - Invalid SMILES string: not-a-valid-smiles
+2026-07-13 15:19:51 - supramatch.modules.guest_calc - ERROR - Failed to calculate volume: Invalid SMILES string: not-a-valid-smiles
+Traceback (most recent call last):
+  File "/dartfs-hpc/rc/home/x/f007h8x/supramatch/supramatch/modules/guest_calc.py", line 88, in calculate_volume
+    raise ValueError(f"Invalid SMILES string: {smiles}")
+ValueError: Invalid SMILES string: not-a-valid-smiles
+✗ Error: Failed to calculate volume for SMILES 'not-a-valid-smiles': Invalid SMILES string: not-a-valid-smiles
+2026-07-13 15:19:51 - supramatch.cli.commands.guest - ERROR - Failed to load guest: Failed to calculate volume for SMILES 'not-a-valid-smiles': Invalid SMILES string: not-a-valid-smiles
+Aborted!
+2026-07-13 15:19:53 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:20:03 - supramatch.cli.commands.match - INFO - Finding matches for cage 999: pc=0.55 ± 0.09, price=$None–$None, sort=quality_score, limit=20
+2026-07-13 15:20:03 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:20:03 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+Finding matches...
+2026-07-13 15:20:03 - supramatch.modules.matcher - INFO - Finding matches for cage_id=999
+2026-07-13 15:20:03 - supramatch.modules.matcher - ERROR - Cage with ID 999 not found
+✗ Error: Cage with ID 999 not found
+2026-07-13 15:20:03 - supramatch.cli.commands.match - ERROR - Matching failed: Cage with ID 999 not found
+Aborted!
+2026-07-13 15:20:04 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:20:13 - supramatch.cli.commands.match - INFO - Creating matches for cage 999
+2026-07-13 15:20:13 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:20:13 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+✗ Cage 999 not found
+2026-07-13 15:20:13 - supramatch.cli.commands.match - ERROR - Cage 999 not found
+✗ Error: 
+2026-07-13 15:20:13 - supramatch.cli.commands.match - ERROR - Failed to create matches: 
+Traceback (most recent call last):
+  File "/dartfs-hpc/rc/home/x/f007h8x/supramatch/supramatch/cli/commands/match.py", line 85, in create
+    raise click.Abort()
+click.exceptions.Abort
+Aborted!
+2026-07-13 15:20:14 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+✗ Error: specify --cage or --guest
+Aborted!
+2026-07-13 15:20:24 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+✗ Error: specify only one of --cage or --guest
+Aborted!
+2026-07-13 15:20:34 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+✗ Error: specify exactly one of --cage-pdb or --cage-id
+Aborted!
+2026-07-13 15:20:45 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+✗ Error: specify exactly one of --cage-pdb or --cage-id
+Aborted!
+2026-07-13 15:20:56 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+✗ Error: specify at least one --guest or --guest-id
+Aborted!
+2026-07-13 15:21:06 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+Are you sure you want to delete this guest? This will also delete all associated matches and prices. [y/N]: 2026-07-13 15:21:15 - supramatch.cli.commands.guest - INFO - Deleting guest: 1
+2026-07-13 15:21:15 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:21:15 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:21:15 - supramatch.modules.guest_calc - INFO - Deleted guest 'Benzene'
 ✓ Deleted guest 1
-2026-07-09 14:25:52 - supramatch.cli.commands.guest - INFO - Deleted guest 1
-2026-07-09 14:25:53 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:26:02 - supramatch.cli.commands.guest - INFO - Listing guest(s): supplier=None, limit=20
-2026-07-09 14:26:02 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:26:03 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:26:03 - supramatch.modules.guest_calc - INFO - Found 4 guest(s) in database
+2026-07-13 15:21:15 - supramatch.cli.commands.guest - INFO - Deleted guest 1
+2026-07-13 15:21:16 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:21:25 - supramatch.cli.commands.guest - INFO - Listing guest(s): limit=20
+2026-07-13 15:21:25 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:21:25 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:21:25 - supramatch.modules.guest_calc - INFO - Found 11 guest(s) in database
 
-Found 4 guest(s):
+Found 11 guest(s):
 
-ID    Name                      Volume          Price        Supplier
+ID    Name                      Volume          Formula      CAS
 --------------------------------------------------------------------------------
-2     cis-Decalin               156.58 Å³       $12.00       Sigma-Aldrich
-3     1,3-Dibromoadamantane     185.91 Å³       N/A          N/A
-4     Toluene                   100.22 Å³       $0.45        Sigma-Aldrich
-5     Naphthalene               127.18 Å³       $1.85        Sigma-Aldrich
-2026-07-09 14:26:03 - supramatch.cli.commands.guest - INFO - Listed 4 guest(s)
-2026-07-09 14:26:04 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-Are you sure you want to delete this cage? This will also delete all associated matches. [y/N]: 2026-07-09 14:26:13 - supramatch.cli.commands.cage - INFO - Deleting cage: 2
-2026-07-09 14:26:13 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:26:13 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:26:13 - supramatch.modules.cage_calc - INFO - Deleted cage 'copy'
+2     cis-Decalin               156.81 Å³       N/A          493-01-6
+3     Cyclohexane               100.66 Å³       C6H12        110-82-7
+4     Adamantane                145.82 Å³       C10H16       281-23-2
+5     Menthol                   176.91 Å³       C10H20O      89-78-1
+6     Camphor                   161.27 Å³       N/A          76-22-2
+7     1,3-Dibromoadamantane     185.91 Å³       N/A          N/A
+8     Toluene                   100.22 Å³       N/A          108-88-3
+9     Naphthalene               127.18 Å³       N/A          91-20-3
+10    Aspirin                   156.87 Å³       C9H8O4       50-78-2
+11    Caffeine                  166.57 Å³       C8H10N4O2    58-08-2
+12    Ibuprofen, (+-)-          212.82 Å³       C13H18O2     15687-27-1
+2026-07-13 15:21:25 - supramatch.cli.commands.guest - INFO - Listed 11 guest(s)
+2026-07-13 15:21:27 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+Are you sure you want to delete this cage? This will also delete all associated matches. [y/N]: 2026-07-13 15:21:44 - supramatch.cli.commands.cage - INFO - Deleting cage: 2
+2026-07-13 15:21:44 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:21:44 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:21:44 - supramatch.modules.cage_calc - INFO - Deleted cage 'copy'
 ✓ Deleted cage 2
-2026-07-09 14:26:13 - supramatch.cli.commands.cage - INFO - Deleted cage 2
-2026-07-09 14:26:14 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-2026-07-09 14:26:24 - supramatch.cli.commands.cage - INFO - Listing cage(s) from database
-2026-07-09 14:26:24 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:26:24 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
-2026-07-09 14:26:24 - supramatch.modules.cage_calc - INFO - Found 1 cage(s) in database
+2026-07-13 15:21:44 - supramatch.cli.commands.cage - INFO - Deleted cage 2
+2026-07-13 15:21:47 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+2026-07-13 15:22:02 - supramatch.cli.commands.cage - INFO - Listing cage(s) from database
+2026-07-13 15:22:02 - supramatch.db.database - INFO - Initializing database: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:22:02 - supramatch.db.database - INFO - Database initialized: /dartfs-hpc/rc/home/x/f007h8x/supramatch/data/supramatch.db
+2026-07-13 15:22:02 - supramatch.modules.cage_calc - INFO - Found 2 cage(s) in database
 
-Found 1 cage(s):
+Found 2 cage(s):
 
 ID    Name                      Volume          PDB File
 --------------------------------------------------------------------------------
-1     zd001; Picture 1          329.45 Å³       ..../data/cages/zd001_Picture_1.pdb
-2026-07-09 14:26:24 - supramatch.cli.commands.cage - INFO - Listed 1 cage(s)
-2026-07-09 14:26:25 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
-WARNING: This will erase ALL data! Continue? [y/N]: 2026-07-09 14:26:35 - supramatch.cli.commands.db - WARNING - Dropping all tables - destructive operation
+1     zd001; Picture 1          329.45 Å³       ...h/tests/data/zd001_Picture_1.pdb
+3     Pipeline Cage             329.45 Å³       ...h/tests/data/zd001_Picture_1.pdb
+2026-07-13 15:22:02 - supramatch.cli.commands.cage - INFO - Listed 2 cage(s)
+2026-07-13 15:22:04 - supramatch.logging_config - INFO - Logging initialized - Level: INFO, File: /dartfs-hpc/rc/home/x/f007h8x/supramatch/logs/supramatch.log
+WARNING: This will erase ALL data! Continue? [y/N]: 2026-07-13 15:22:14 - supramatch.cli.commands.db - WARNING - Dropping all tables - destructive operation
 Dropping all tables...
-2026-07-09 14:26:35 - supramatch.db.database - WARNING - Dropping all tables from database
-2026-07-09 14:26:36 - supramatch.db.database - WARNING - All tables dropped from database
+2026-07-13 15:22:14 - supramatch.db.database - WARNING - Dropping all tables from database
+2026-07-13 15:22:14 - supramatch.db.database - WARNING - All tables dropped from database
 ✓ All tables dropped
 
-2026-07-09 14:26:36 - supramatch.cli.commands.db - INFO - All tables dropped successfully
+2026-07-13 15:22:14 - supramatch.cli.commands.db - INFO - All tables dropped successfully
