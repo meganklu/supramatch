@@ -74,6 +74,12 @@ HG_MATCH_CONFIG = {
 
     # Default packing coefficient tolerance for viable matches
     "pc_tolerance_default": float(os.getenv("PC_TOLERANCE_DEFAULT", "0.09")),
+
+    # Guest price per gram ($/g) at which the price component of
+    # quality_score bottoms out at 0. Scored on a log scale between $0 and
+    # this ceiling, so a price change matters more near the low end (e.g.
+    # $1 -> $2) than the same dollar change near the high end (e.g. $90 -> $100).
+    "quality_price_ceiling": float(os.getenv("QUALITY_PRICE_CEILING", "100")),
 }
 
 # ==================== PUBCHEM ====================

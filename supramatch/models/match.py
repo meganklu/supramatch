@@ -1,5 +1,6 @@
 """Match dataclass."""
 
+import math
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
@@ -58,8 +59,11 @@ class Match:
 
         - Geometric fit: 0-50 points, full points within the ideal PC range,
           scaled down the further packing_coefficient is outside it
-        - Cost efficiency: 0-50 points, lower price per gram scores higher
-          (neutral 25 points if no price data has been looked up yet)
+        - Cost efficiency: 0-50 points, lower price per gram scores higher,
+          on a log scale so a given price change matters more near the low
+          end (e.g. $1 -> $2) than the same change near the high end (e.g.
+          $90 -> $100) (neutral 25 points if no price data has been looked
+          up yet)
         """
         pc_ideal = HG_MATCH_CONFIG["pc_ideal_default"]
         pc_tolerance = HG_MATCH_CONFIG["pc_tolerance_default"]
@@ -70,7 +74,9 @@ class Match:
             pc_score = 50 - (abs(self.packing_coefficient - pc_ideal) * 100)
 
         if self.guest_price_per_gram:
-            price_score = max(0, 50 - (self.guest_price_per_gram * 0.5))
+            price_ceiling = HG_MATCH_CONFIG["quality_price_ceiling"]
+            decay_rate = 50 / math.log(1 + price_ceiling)
+            price_score = max(0, 50 - decay_rate * math.log(1 + self.guest_price_per_gram))
         else:
             price_score = 25
 
