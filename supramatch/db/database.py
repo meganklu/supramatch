@@ -98,6 +98,7 @@ def drop_all_tables() -> None:
     logger.warning("Dropping all tables from database")
     # Drop child tables before parents to respect foreign keys
     conn.execute("DROP TABLE IF EXISTS matches")
+    conn.execute("DROP TABLE IF EXISTS prices")
     conn.execute("DROP TABLE IF EXISTS guests")
     conn.execute("DROP TABLE IF EXISTS cages")
     conn.commit()

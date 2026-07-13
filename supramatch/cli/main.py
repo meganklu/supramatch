@@ -9,12 +9,17 @@ Usage:
     supramatch cage --help
     supramatch guest --help
     supramatch match --help
+    supramatch price --help
+    supramatch pipeline --help
     supramatch db --help
 
 Examples:
     supramatch cage load data/cage.pdb --name MyCage
+    supramatch guest fetch aspirin
     supramatch guest import guests.csv
     supramatch match find 1 --pc-ideal 0.55 --pc-tolerance 0.15 --limit 10
+    supramatch price lookup --cage 1
+    supramatch pipeline run --cage-pdb data/cage.pdb --guest aspirin --guest ibuprofen
     supramatch db init
 """
 
@@ -41,8 +46,11 @@ def cli(ctx):
 
     Examples:
         supramatch cage load data/cage.pdb --name MyCage
+        supramatch guest fetch aspirin
         supramatch guest import guests.csv
         supramatch match find 1 --pc-ideal 0.55 --pc-tolerance 0.15
+        supramatch price lookup --cage 1
+        supramatch pipeline run --cage-pdb data/cage.pdb --guest aspirin
     """
     ctx.ensure_object(dict)
 
@@ -56,6 +64,8 @@ def cli(ctx):
 cli.add_command(commands.cage.cage_group, name="cage")
 cli.add_command(commands.guest.guest_group, name="guest")
 cli.add_command(commands.match.match_group, name="match")
+cli.add_command(commands.price.price_group, name="price")
+cli.add_command(commands.pipeline.pipeline_group, name="pipeline")
 cli.add_command(commands.db.db_group, name="db")
 
 def main():

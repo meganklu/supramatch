@@ -125,14 +125,19 @@ def status():
         cage_count = queries.count_cages(conn)
         guest_count = queries.count_guests(conn)
         match_count = queries.count_matches(conn)
+        price_count = queries.count_prices(conn)
 
         click.echo("\nDatabase Status:")
         click.echo(f"  Cage(s): {cage_count}")
         click.echo(f"  Guest(s): {guest_count}")
         click.echo(f"  Match(es): {match_count}")
+        click.echo(f"  Price quote(s): {price_count}")
         click.echo()
 
-        logger.info(f"Database status: {cage_count} cage(s), {guest_count} guest(s), {match_count} match(es)")
+        logger.info(
+            f"Database status: {cage_count} cage(s), {guest_count} guest(s), "
+            f"{match_count} match(es), {price_count} price quote(s)"
+        )
 
     except Exception as e:
         click.secho(f"✗ Error: {e}", fg="red", err=True)

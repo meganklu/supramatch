@@ -1,4 +1,4 @@
-"""Raw SQL query functions for cages, guests, and matches."""
+"""Raw SQL query functions for cages, guests, matches, and prices."""
 
 import sqlite3
 from datetime import datetime
@@ -6,6 +6,7 @@ from typing import List, Optional
 from supramatch.models.cage import Cage
 from supramatch.models.guest import Guest
 from supramatch.models.match import Match
+from supramatch.models.price import Price
 
 
 def _parse_datetime(value: Optional[str]) -> Optional[datetime]:
@@ -30,13 +31,13 @@ def _row_to_guest(row: sqlite3.Row) -> Guest:
         id=row["id"],
         name=row["name"],
         smiles=row["smiles"],
-        molar_mass=row["molar_mass"],
+        molecular_weight=row["molecular_weight"],
         molecular_volume=row["molecular_volume"],
+        iupac_name=row["iupac_name"],
+        molecular_formula=row["molecular_formula"],
+        pubchem_cid=row["pubchem_cid"],
         cas_number=row["cas_number"],
-        price_per_gram=row["price_per_gram"],
-        supplier=row["supplier"],
         physical_state=row["physical_state"],
-        url=row["url"],
         created_at=_parse_datetime(row["created_at"]),
     )
 
@@ -48,14 +49,31 @@ def _row_to_match(row: sqlite3.Row) -> Match:
         cage_id=row["cage_id"],
         guest_id=row["guest_id"],
         packing_coefficient=row["packing_coefficient"],
-        quality_score=row["quality_score"],
-        is_viable=bool(row["is_viable"]),
         notes=row["notes"],
         created_at=_parse_datetime(row["created_at"]),
         cage_name=row["cage_name"] if "cage_name" in columns else None,
         cage_cavity_volume=row["cage_cavity_volume"] if "cage_cavity_volume" in columns else None,
         guest_name=row["guest_name"] if "guest_name" in columns else None,
         guest_price_per_gram=row["guest_price_per_gram"] if "guest_price_per_gram" in columns else None,
+    )
+
+
+def _row_to_price(row: sqlite3.Row) -> Price:
+    columns = row.keys()
+    return Price(
+        id=row["id"],
+        guest_id=row["guest_id"],
+        source=row["source"],
+        supplier_name=row["supplier_name"],
+        purity=row["purity"],
+        amount=row["amount"],
+        measure=row["measure"],
+        price_usd=row["price_usd"],
+        usd_per_gram=row["usd_per_gram"],
+        usd_per_mol=row["usd_per_mol"],
+        usd_per_liter=row["usd_per_liter"],
+        created_at=_parse_datetime(row["created_at"]),
+        guest_name=row["guest_name"] if "guest_name" in columns else None,
     )
 
 
@@ -139,24 +157,24 @@ def create_guest(
     name: str,
     smiles: str,
     molecular_volume: float,
-    molar_mass: Optional[float] = None,
+    molecular_weight: Optional[float] = None,
+    iupac_name: Optional[str] = None,
+    molecular_formula: Optional[str] = None,
+    pubchem_cid: Optional[int] = None,
     cas_number: Optional[str] = None,
-    supplier: Optional[str] = None,
-    price_per_gram: Optional[float] = None,
     physical_state: Optional[str] = None,
-    url: Optional[str] = None,
 ) -> Guest:
     """Insert a new guest and return it."""
     cur = conn.execute(
         """
         INSERT INTO guests (
-            name, cas_number, smiles, molar_mass, molecular_volume,
-            price_per_gram, supplier, physical_state, url, created_at, updated_at
+            name, iupac_name, pubchem_cid, cas_number, smiles, molecular_weight,
+            molecular_volume, molecular_formula, physical_state, created_at, updated_at
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         """,
-        (name, cas_number, smiles, molar_mass, molecular_volume,
-         price_per_gram, supplier, physical_state, url),
+        (name, iupac_name, pubchem_cid, cas_number, smiles, molecular_weight,
+         molecular_volume, molecular_formula, physical_state),
     )
     conn.commit()
     return get_guest_by_id(conn, cur.lastrowid)
@@ -180,6 +198,12 @@ def get_guest_by_name(conn: sqlite3.Connection, name: str) -> Optional[Guest]:
     return _row_to_guest(row) if row else None
 
 
+def get_guest_by_smiles(conn: sqlite3.Connection, smiles: str) -> Optional[Guest]:
+    """Retrieve a guest by exact SMILES string match."""
+    row = conn.execute("SELECT * FROM guests WHERE smiles = ?", (smiles,)).fetchone()
+    return _row_to_guest(row) if row else None
+
+
 def get_guests_by_ids(conn: sqlite3.Connection, guest_ids: List[int]) -> List[Guest]:
     """Retrieve multiple guests by primary key."""
     if not guest_ids:
@@ -194,19 +218,14 @@ def get_guests_by_ids(conn: sqlite3.Connection, guest_ids: List[int]) -> List[Gu
 def search_guests(
     conn: sqlite3.Connection,
     name_pattern: Optional[str] = None,
-    supplier: Optional[str] = None,
 ) -> List[Guest]:
-    """Search for guests with flexible criteria."""
+    """Search for guests by name."""
     sql = "SELECT * FROM guests WHERE 1=1"
     params: list = []
 
     if name_pattern:
         sql += " AND name LIKE ?"
         params.append(f"%{name_pattern}%")
-
-    if supplier:
-        sql += " AND supplier = ?"
-        params.append(supplier)
 
     rows = conn.execute(sql, params).fetchall()
     return [_row_to_guest(row) for row in rows]
@@ -217,26 +236,6 @@ def list_guests(conn: sqlite3.Connection, limit: Optional[int] = None, offset: i
     sql = "SELECT * FROM guests ORDER BY id LIMIT ? OFFSET ?"
     rows = conn.execute(sql, (limit if limit else -1, offset)).fetchall()
     return [_row_to_guest(row) for row in rows]
-
-
-def update_guest_price(conn: sqlite3.Connection, guest_id: int, new_price_per_gram: float) -> bool:
-    """Update a guest's price per gram."""
-    cur = conn.execute(
-        "UPDATE guests SET price_per_gram = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-        (new_price_per_gram, guest_id),
-    )
-    conn.commit()
-    return cur.rowcount > 0
-
-
-def update_guest_url(conn: sqlite3.Connection, guest_id: int, url: str) -> bool:
-    """Update a guest's supplier URL."""
-    cur = conn.execute(
-        "UPDATE guests SET url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-        (url, guest_id),
-    )
-    conn.commit()
-    return cur.rowcount > 0
 
 
 def update_guest_volume(conn: sqlite3.Connection, guest_id: int, new_volume: float) -> bool:
@@ -250,7 +249,7 @@ def update_guest_volume(conn: sqlite3.Connection, guest_id: int, new_volume: flo
 
 
 def delete_guest(conn: sqlite3.Connection, guest_id: int) -> bool:
-    """Delete a guest (and its matches, via ON DELETE CASCADE)."""
+    """Delete a guest (and its matches/prices, via ON DELETE CASCADE)."""
     cur = conn.execute("DELETE FROM guests WHERE id = ?", (guest_id,))
     conn.commit()
     return cur.rowcount > 0
@@ -263,16 +262,38 @@ def count_guests(conn: sqlite3.Connection) -> int:
 
 # ==================== MATCHES ====================
 
-_MATCH_SELECT = """
+# A guest's best known price per gram: prefer a directly-quoted usd_per_gram,
+# falling back to usd_per_mol / molecular_weight when only a molar quote exists.
+# Volume-based quotes (usd_per_liter) can't be converted without density data
+# and are left out -- a guest priced only that way is treated as unpriced.
+_BEST_PRICE_SUBQUERY = """
+    SELECT
+        prices.guest_id AS guest_id,
+        MIN(
+            COALESCE(
+                prices.usd_per_gram,
+                CASE
+                    WHEN prices.usd_per_mol IS NOT NULL AND guests.molecular_weight IS NOT NULL
+                    THEN prices.usd_per_mol / guests.molecular_weight
+                END
+            )
+        ) AS usd_per_gram
+    FROM prices
+    JOIN guests ON guests.id = prices.guest_id
+    GROUP BY prices.guest_id
+"""
+
+_MATCH_SELECT = f"""
     SELECT
         matches.*,
         cages.name AS cage_name,
         cages.cavity_volume AS cage_cavity_volume,
         guests.name AS guest_name,
-        guests.price_per_gram AS guest_price_per_gram
+        best_price.usd_per_gram AS guest_price_per_gram
     FROM matches
     JOIN cages ON cages.id = matches.cage_id
     JOIN guests ON guests.id = matches.guest_id
+    LEFT JOIN ({_BEST_PRICE_SUBQUERY}) AS best_price ON best_price.guest_id = matches.guest_id
 """
 
 
@@ -281,20 +302,15 @@ def create_match(
     cage_id: int,
     guest_id: int,
     packing_coefficient: float,
-    quality_score: float,
-    is_viable: bool = True,
     notes: Optional[str] = None,
 ) -> Match:
     """Insert a new match and return it."""
     cur = conn.execute(
         """
-        INSERT INTO matches (
-            cage_id, guest_id, packing_coefficient, quality_score, is_viable, notes,
-            created_at, updated_at
-        )
-        VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        INSERT INTO matches (cage_id, guest_id, packing_coefficient, notes, created_at, updated_at)
+        VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         """,
-        (cage_id, guest_id, packing_coefficient, quality_score, int(is_viable), notes),
+        (cage_id, guest_id, packing_coefficient, notes),
     )
     conn.commit()
     return get_match(conn, cur.lastrowid)
@@ -328,37 +344,25 @@ def find_matches_for_cage(
     pc_tolerance: float,
     max_price: Optional[float] = None,
     min_price: Optional[float] = None,
-    only_viable: bool = True,
-    sort_by: str = "quality_score",
-    limit: Optional[int] = None,
 ) -> List[Match]:
-    """Find matches for a cage filtered by packing coefficient range, price, and viability."""
+    """
+    Find matches for a cage within a packing-coefficient window and price bounds.
+
+    Returns every matching candidate, unsorted and unlimited. Viability
+    filtering and sorting (including by quality_score, which is computed
+    from fields on Match rather than stored) are business-layer concerns
+    handled by MatchingEngine, not this query.
+    """
     sql = f"{_MATCH_SELECT} WHERE matches.cage_id = ? AND ABS(matches.packing_coefficient - ?) <= ?"
     params: list = [cage_id, pc_ideal, pc_tolerance]
 
-    if only_viable:
-        sql += " AND matches.is_viable = 1"
-
     if max_price is not None:
-        sql += " AND guests.price_per_gram <= ?"
+        sql += " AND best_price.usd_per_gram <= ?"
         params.append(max_price)
 
     if min_price is not None:
-        sql += " AND guests.price_per_gram >= ?"
+        sql += " AND best_price.usd_per_gram >= ?"
         params.append(min_price)
-
-    if sort_by == "packing_coefficient":
-        sql += " ORDER BY ABS(matches.packing_coefficient - ?) ASC"
-        params.append(pc_ideal)
-    elif sort_by == "price":
-        # NULL prices sort last, then ascending
-        sql += " ORDER BY guests.price_per_gram IS NULL, guests.price_per_gram ASC"
-    else:
-        sql += " ORDER BY matches.quality_score DESC"
-
-    if limit:
-        sql += " LIMIT ?"
-        params.append(limit)
 
     rows = conn.execute(sql, params).fetchall()
     return [_row_to_match(row) for row in rows]
@@ -391,3 +395,78 @@ def delete_matches_for_cage(conn: sqlite3.Connection, cage_id: int) -> int:
 def count_matches(conn: sqlite3.Connection) -> int:
     """Count all matches."""
     return conn.execute("SELECT COUNT(*) FROM matches").fetchone()[0]
+
+
+# ==================== PRICES ====================
+
+_PRICE_SELECT = """
+    SELECT prices.*, guests.name AS guest_name
+    FROM prices
+    JOIN guests ON guests.id = prices.guest_id
+"""
+
+
+def create_price(
+    conn: sqlite3.Connection,
+    guest_id: int,
+    source: str,
+    supplier_name: Optional[str] = None,
+    purity: Optional[str] = None,
+    amount: Optional[float] = None,
+    measure: Optional[str] = None,
+    price_usd: Optional[float] = None,
+    usd_per_gram: Optional[float] = None,
+    usd_per_mol: Optional[float] = None,
+    usd_per_liter: Optional[float] = None,
+) -> Price:
+    """Insert a new vendor price quote and return it."""
+    cur = conn.execute(
+        """
+        INSERT INTO prices (
+            guest_id, source, supplier_name, purity, amount, measure,
+            price_usd, usd_per_gram, usd_per_mol, usd_per_liter, created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        """,
+        (guest_id, source, supplier_name, purity, amount, measure,
+         price_usd, usd_per_gram, usd_per_mol, usd_per_liter),
+    )
+    conn.commit()
+    return get_price(conn, cur.lastrowid)
+
+
+def get_price(conn: sqlite3.Connection, price_id: int) -> Optional[Price]:
+    """Retrieve a price quote by primary key."""
+    row = conn.execute(f"{_PRICE_SELECT} WHERE prices.id = ?", (price_id,)).fetchone()
+    return _row_to_price(row) if row else None
+
+
+def count_prices(conn: sqlite3.Connection) -> int:
+    """Count all stored vendor price quotes."""
+    return conn.execute("SELECT COUNT(*) FROM prices").fetchone()[0]
+
+
+def list_prices_for_guest(conn: sqlite3.Connection, guest_id: int) -> List[Price]:
+    """List all stored price quotes for a guest, cheapest-per-gram first."""
+    rows = conn.execute(
+        f"{_PRICE_SELECT} WHERE prices.guest_id = ? "
+        "ORDER BY prices.usd_per_gram IS NULL, prices.usd_per_gram ASC",
+        (guest_id,),
+    ).fetchall()
+    return [_row_to_price(row) for row in rows]
+
+
+def guest_has_recent_price(conn: sqlite3.Connection, guest_id: int, ttl_days: int) -> bool:
+    """Check whether a guest already has a price quote newer than ttl_days."""
+    row = conn.execute(
+        "SELECT 1 FROM prices WHERE guest_id = ? AND created_at >= datetime('now', ?) LIMIT 1",
+        (guest_id, f"-{ttl_days} days"),
+    ).fetchone()
+    return row is not None
+
+
+def delete_prices_for_guest(conn: sqlite3.Connection, guest_id: int) -> int:
+    """Delete all stored price quotes for a guest. Returns the number of rows deleted."""
+    cur = conn.execute("DELETE FROM prices WHERE guest_id = ?", (guest_id,))
+    conn.commit()
+    return cur.rowcount
