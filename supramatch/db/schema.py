@@ -26,6 +26,7 @@ CREATE_GUESTS_TABLE = """
         molecular_weight    REAL,
         molecular_volume    REAL,
         molecular_formula   TEXT,
+        rotatable_bonds     INTEGER,
         physical_state      TEXT,
         created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP

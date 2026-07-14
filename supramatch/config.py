@@ -94,6 +94,21 @@ HG_MATCH_CONFIG = {
     # purity reported at all are excluded too, since there's nothing to
     # confirm they clear the bar.
     "min_purity_pct": float(os.getenv("MIN_PURITY_PCT", "95")),
+
+    # Point budgets for quality_score's three components (should sum to 100,
+    # though nothing enforces that if you retune them).
+    "quality_pc_weight": float(os.getenv("QUALITY_PC_WEIGHT", "40")),
+    "quality_price_weight": float(os.getenv("QUALITY_PRICE_WEIGHT", "40")),
+    "quality_flexibility_weight": float(os.getenv("QUALITY_FLEXIBILITY_WEIGHT", "20")),
+
+    # Rotatable bond count at which the flexibility component of
+    # quality_score has decayed to half its max. Full marks at 0 rotatable
+    # bonds (a rigid guest), decaying on a saturating curve --
+    # half_saturation / (rotatable_bonds + half_saturation) -- rather than
+    # linearly per bond, since each additional rotor beyond the first few
+    # contributes less independent conformational freedom (correlated/
+    # constrained motions), matching the diminishing entropic cost per bond.
+    "quality_flexibility_half_saturation": float(os.getenv("QUALITY_FLEXIBILITY_HALF_SATURATION", "4")),
 }
 
 # ==================== PUBCHEM ====================

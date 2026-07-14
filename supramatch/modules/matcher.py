@@ -1,9 +1,11 @@
 """
-Match guest molecules to host cages based on packing coefficient and price.
+Match guest molecules to host cages based on packing coefficient, price,
+and guest flexibility.
 
 Evaluation Criteria:
     - Packing Coefficient (PC): Geometric fit (0.55 ± 0.09 optimal)
     - Price per Gram ($/g): Cost efficiency
+    - Rotatable Bonds: Guest conformational flexibility (fewer is better)
     - Quality Score: Combined metric (0-100)
 
 Note:
@@ -28,11 +30,13 @@ logger = logging.getLogger(__name__)
 
 class MatchingEngine:
     """
-    Match guest molecules to host cages based on packing coefficient and price.
+    Match guest molecules to host cages based on packing coefficient, price,
+    and guest flexibility.
 
     Evaluation:
         - Primary: Packing coefficient (geometric fit)
         - Secondary: Price per gram (cost efficiency)
+        - Tertiary: Rotatable bond count (conformational flexibility)
     """
 
     def __init__(self):

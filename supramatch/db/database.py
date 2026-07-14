@@ -56,6 +56,23 @@ def close_connection() -> None:
         logger.debug("Database connection closed")
 
 
+# Columns added to existing tables after their initial release. CREATE TABLE
+# IF NOT EXISTS won't retrofit these onto a database created before the
+# column existed, so init_db adds any that are missing.
+_COLUMN_MIGRATIONS = [
+    ("guests", "rotatable_bonds", "INTEGER"),
+]
+
+
+def _migrate_missing_columns(conn: sqlite3.Connection) -> None:
+    """Add any columns in _COLUMN_MIGRATIONS that aren't present yet."""
+    for table, column, col_type in _COLUMN_MIGRATIONS:
+        existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+        if column not in existing:
+            logger.info(f"Migrating schema: adding {table}.{column} ({col_type})")
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
+
+
 def init_db() -> None:
     """
     Initialize database by creating all tables and indexes.
@@ -76,6 +93,7 @@ def init_db() -> None:
             conn.execute(statement)
         for statement in CREATE_INDEXES:
             conn.execute(statement)
+        _migrate_missing_columns(conn)
         conn.commit()
         logger.info(f"Database initialized: {DATABASE_PATH}")
 

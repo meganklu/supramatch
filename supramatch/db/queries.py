@@ -36,6 +36,7 @@ def _row_to_guest(row: sqlite3.Row) -> Guest:
         molecular_volume=row["molecular_volume"],
         iupac_name=row["iupac_name"],
         molecular_formula=row["molecular_formula"],
+        rotatable_bonds=row["rotatable_bonds"],
         pubchem_cid=row["pubchem_cid"],
         cas_number=row["cas_number"],
         physical_state=row["physical_state"],
@@ -55,6 +56,7 @@ def _row_to_match(row: sqlite3.Row) -> Match:
         cage_name=row["cage_name"] if "cage_name" in columns else None,
         cage_cavity_volume=row["cage_cavity_volume"] if "cage_cavity_volume" in columns else None,
         guest_name=row["guest_name"] if "guest_name" in columns else None,
+        guest_rotatable_bonds=row["guest_rotatable_bonds"] if "guest_rotatable_bonds" in columns else None,
         guest_price_per_gram=row["guest_price_per_gram"] if "guest_price_per_gram" in columns else None,
     )
 
@@ -161,6 +163,7 @@ def create_guest(
     molecular_weight: Optional[float] = None,
     iupac_name: Optional[str] = None,
     molecular_formula: Optional[str] = None,
+    rotatable_bonds: Optional[int] = None,
     pubchem_cid: Optional[int] = None,
     cas_number: Optional[str] = None,
     physical_state: Optional[str] = None,
@@ -170,12 +173,13 @@ def create_guest(
         """
         INSERT INTO guests (
             name, iupac_name, pubchem_cid, cas_number, smiles, molecular_weight,
-            molecular_volume, molecular_formula, physical_state, created_at, updated_at
+            molecular_volume, molecular_formula, rotatable_bonds, physical_state,
+            created_at, updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         """,
         (name, iupac_name, pubchem_cid, cas_number, smiles, molecular_weight,
-         molecular_volume, molecular_formula, physical_state),
+         molecular_volume, molecular_formula, rotatable_bonds, physical_state),
     )
     conn.commit()
     return get_guest_by_id(conn, cur.lastrowid)
@@ -249,6 +253,16 @@ def update_guest_volume(conn: sqlite3.Connection, guest_id: int, new_volume: flo
     return cur.rowcount > 0
 
 
+def update_guest_rotatable_bonds(conn: sqlite3.Connection, guest_id: int, rotatable_bonds: int) -> bool:
+    """Update a guest's rotatable bond count."""
+    cur = conn.execute(
+        "UPDATE guests SET rotatable_bonds = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        (rotatable_bonds, guest_id),
+    )
+    conn.commit()
+    return cur.rowcount > 0
+
+
 def delete_guest(conn: sqlite3.Connection, guest_id: int) -> bool:
     """Delete a guest (and its matches/prices, via ON DELETE CASCADE)."""
     cur = conn.execute("DELETE FROM guests WHERE id = ?", (guest_id,))
@@ -294,6 +308,7 @@ _MATCH_SELECT = f"""
         cages.name AS cage_name,
         cages.cavity_volume AS cage_cavity_volume,
         guests.name AS guest_name,
+        guests.rotatable_bonds AS guest_rotatable_bonds,
         best_price.usd_per_gram AS guest_price_per_gram
     FROM matches
     JOIN cages ON cages.id = matches.cage_id

@@ -127,6 +127,7 @@ def load(
         click.secho(f"✓ Loaded guest '{guest.name}'", fg="green")
         click.echo(f"  SMILES: {guest.smiles}")
         click.echo(f"  Volume: {format_volume(guest.molecular_volume)}")
+        click.echo(f"  Rotatable bonds: {guest.rotatable_bonds}")
 
         if guest.molecular_weight:
             click.echo(f"  Molecular weight: {guest.molecular_weight} g/mol")
@@ -186,6 +187,7 @@ def fetch(query: str, name: Optional[str], state: Optional[str]):
         click.secho(f"✓ Fetched guest '{guest.name}' (PubChem CID {guest.pubchem_cid})", fg="green")
         click.echo(f"  SMILES: {guest.smiles}")
         click.echo(f"  Volume: {format_volume(guest.molecular_volume)}")
+        click.echo(f"  Rotatable bonds: {guest.rotatable_bonds}")
 
         if guest.molecular_weight:
             click.echo(f"  Molecular weight: {guest.molecular_weight} g/mol")
@@ -241,14 +243,15 @@ def import_guests(file: str):
 
         if guests:
             click.echo("\nImported guest(s):")
-            click.echo(f"{'Name':<30} {'Formula':<12} {'Volume':<15} {'CAS'}")
-            click.echo("-" * 70)
+            click.echo(f"{'Name':<30} {'Formula':<12} {'Volume':<15} {'NRB':<5} {'CAS'}")
+            click.echo("-" * 75)
 
             for guest in guests[:10]:  # Show first 10
                 volume_str = format_volume(guest.molecular_volume)
                 formula_str = guest.molecular_formula or "N/A"
+                nrb_str = str(guest.rotatable_bonds) if guest.rotatable_bonds is not None else "N/A"
                 cas_str = guest.cas_number or "N/A"
-                click.echo(f"{truncate(guest.name, 30):<30} {formula_str:<12} {volume_str:<15} {cas_str}")
+                click.echo(f"{truncate(guest.name, 30):<30} {formula_str:<12} {volume_str:<15} {nrb_str:<5} {cas_str}")
 
             if len(guests) > 10:
                 click.echo(f"... and {len(guests) - 10} more")
@@ -293,13 +296,14 @@ def list(limit: int):
             return
 
         click.echo(f"\nFound {len(guests)} guest(s):\n")
-        click.echo(f"{'ID':<5} {'Name':<25} {'Formula':<10} {'MW (g/mol)':<12} {'Volume':<15} {'State':<8} {'CAS'}")
-        click.echo("-" * 100)
+        click.echo(f"{'ID':<5} {'Name':<25} {'Formula':<10} {'MW (g/mol)':<12} {'Volume':<15} {'NRB':<5} {'State':<8} {'CAS'}")
+        click.echo("-" * 105)
 
         for guest in guests[:limit]:
             volume_str = format_volume(guest.molecular_volume)
             formula_str = guest.molecular_formula or "N/A"
             mw_str = f"{guest.molecular_weight:.2f}" if guest.molecular_weight else "N/A"
+            nrb_str = str(guest.rotatable_bonds) if guest.rotatable_bonds is not None else "N/A"
             state_str = guest.physical_state or "N/A"
             cas_str = guest.cas_number or "N/A"
 
@@ -309,6 +313,7 @@ def list(limit: int):
                 f"{formula_str:<10} "
                 f"{mw_str:<12} "
                 f"{volume_str:<15} "
+                f"{nrb_str:<5} "
                 f"{state_str:<8} "
                 f"{cas_str}"
             )
@@ -346,13 +351,14 @@ def search(query: str):
             return
 
         click.echo(f"\nFound {len(guests)} guest(s) matching '{query}':\n")
-        click.echo(f"{'ID':<5} {'Name':<30} {'Formula':<10} {'MW (g/mol)':<12} {'Volume':<15} {'State':<8} {'CAS'}")
-        click.echo("-" * 100)
+        click.echo(f"{'ID':<5} {'Name':<30} {'Formula':<10} {'MW (g/mol)':<12} {'Volume':<15} {'NRB':<5} {'State':<8} {'CAS'}")
+        click.echo("-" * 105)
 
         for guest in guests:
             volume_str = format_volume(guest.molecular_volume)
             formula_str = guest.molecular_formula or "N/A"
             mw_str = f"{guest.molecular_weight:.2f}" if guest.molecular_weight else "N/A"
+            nrb_str = str(guest.rotatable_bonds) if guest.rotatable_bonds is not None else "N/A"
             state_str = guest.physical_state or "N/A"
             cas_str = guest.cas_number or "N/A"
 
@@ -362,6 +368,7 @@ def search(query: str):
                 f"{formula_str:<10} "
                 f"{mw_str:<12} "
                 f"{volume_str:<15} "
+                f"{nrb_str:<5} "
                 f"{state_str:<8} "
                 f"{cas_str}"
             )

@@ -21,7 +21,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Optional, List
 from rdkit import Chem
-from rdkit.Chem import AllChem
+from rdkit.Chem import AllChem, Descriptors
 from supramatch.db import queries
 from supramatch.db.database import get_connection, close_connection
 from supramatch.models.guest import Guest
@@ -121,6 +121,46 @@ class GuestCalculator:
             logger.error(f"Failed to calculate volume: {e}", exc_info=True)
             raise ValueError(f"Failed to calculate volume for SMILES '{smiles}': {e}")
 
+    def calculate_rotatable_bonds(self, smiles: str) -> int:
+        """
+        Calculates the number of rotatable bonds in a guest molecule from SMILES.
+
+        Used as a proxy for conformational flexibility -- see
+        Guest.rotatable_bonds and Match.quality_score for how it factors
+        into match scoring. Unlike calculate_volume, this only needs the 2D
+        graph (no 3D embedding), so it's cheap and can't fail the way
+        embedding sometimes does for strained/unusual structures.
+
+        Args:
+            smiles: SMILES string for the guest molecule.
+
+        Returns:
+            int: Number of rotatable bonds.
+
+        Raises:
+            ValueError: If SMILES is invalid.
+
+        Example:
+            >>> calc = GuestCalculator()
+            >>> calc.calculate_rotatable_bonds('c1ccccc1')  # Benzene
+            0
+        """
+        logger.debug(f"Calculating rotatable bonds for SMILES: {smiles}")
+
+        if not smiles or not isinstance(smiles, str):
+            logger.error("Invalid SMILES: must be non-empty string")
+            raise ValueError("SMILES must be a non-empty string")
+
+        mol = Chem.MolFromSmiles(smiles)
+
+        if mol is None:
+            logger.error(f"Invalid SMILES string: {smiles}")
+            raise ValueError(f"Invalid SMILES string: {smiles}")
+
+        rotatable_bonds = Descriptors.NumRotatableBonds(mol)
+        logger.info(f"Successfully calculated rotatable bonds for SMILES: {rotatable_bonds}")
+        return rotatable_bonds
+
     # ==================== DATABASE OPERATIONS ====================
 
     def create_guest(
@@ -209,6 +249,7 @@ class GuestCalculator:
             logger.debug(f"Calculating properties for {name}")
             molecular_volume = self.calculate_volume(smiles)
             volume_str = format_volume(molecular_volume)
+            rotatable_bonds = self.calculate_rotatable_bonds(smiles)
 
             # Create guest record
             guest = queries.create_guest(
@@ -219,12 +260,13 @@ class GuestCalculator:
                 molecular_weight=molecular_weight,
                 iupac_name=iupac_name,
                 molecular_formula=molecular_formula,
+                rotatable_bonds=rotatable_bonds,
                 pubchem_cid=pubchem_cid,
                 cas_number=cas_number,
                 physical_state=physical_state.lower() if physical_state else None,
             )
 
-            logger.info(f"Created guest '{name}': Volume={volume_str}")
+            logger.info(f"Created guest '{name}': Volume={volume_str}, RotatableBonds={rotatable_bonds}")
             return guest
 
         except ValueError:
@@ -339,6 +381,36 @@ class GuestCalculator:
         except Exception as e:
             logger.error(f"Failed to recalculate volume for {guest.name}: {e}")
             raise ValueError(f"Failed to recalculate volume: {e}")
+
+    def recalculate_rotatable_bonds(self, guest_id: int) -> Optional[int]:
+        """
+        Recalculate rotatable bond count for a guest from stored SMILES.
+
+        Mainly useful for backfilling guests created before this field
+        existed (their rotatable_bonds is NULL, so they get no flexibility
+        penalty in Match.quality_score until this is run).
+        """
+        logger.debug(f"Recalculating rotatable bonds for guest ID: {guest_id}")
+        guest = queries.get_guest_by_id(self.conn, guest_id)
+
+        if not guest:
+            logger.warning(f"Guest with ID {guest_id} not found")
+            return None
+
+        if not guest.smiles:
+            logger.warning(f"Guest with ID {guest_id} does not have SMILES stored")
+            return None
+
+        try:
+            logger.info(f"Recalculating rotatable bonds for {guest.name}")
+            new_rotatable_bonds = self.calculate_rotatable_bonds(guest.smiles)
+            queries.update_guest_rotatable_bonds(self.conn, guest_id, new_rotatable_bonds)
+            logger.info(f"Updated {guest.name} rotatable bonds from {guest.rotatable_bonds} to {new_rotatable_bonds}")
+            return new_rotatable_bonds
+
+        except Exception as e:
+            logger.error(f"Failed to recalculate rotatable bonds for {guest.name}: {e}")
+            raise ValueError(f"Failed to recalculate rotatable bonds: {e}")
 
     def delete_guest(self, guest_id: int) -> bool:
         """Delete a guest from the database."""

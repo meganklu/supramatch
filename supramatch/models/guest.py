@@ -23,6 +23,11 @@ class Guest:
         iupac_name: Formal IUPAC name (optional; populated when available,
             e.g. from PubChem)
         molecular_formula: Molecular formula, e.g. "C9H8O4" (optional)
+        rotatable_bonds: Number of rotatable bonds (RDKit's NumRotatableBonds),
+            a proxy for conformational flexibility -- used to penalize floppier
+            guests in Match.quality_score, since they pay a larger entropic
+            cost binding inside a rigid cage cavity (optional; None for guests
+            created before this field existed and not yet backfilled)
         pubchem_cid: PubChem CID this guest was fetched from, for provenance
             (optional; only set when created via `guest fetch`/`create_guest_from_pubchem`)
         cas_number: CAS registry number (optional)
@@ -36,6 +41,7 @@ class Guest:
     molecular_volume: float
     iupac_name: Optional[str] = None
     molecular_formula: Optional[str] = None
+    rotatable_bonds: Optional[int] = None
     pubchem_cid: Optional[int] = None
     cas_number: Optional[str] = None
     physical_state: Optional[str] = None

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `guests` table: `rotatable_bonds` column, computed via RDKit (`Descriptors.NumRotatableBonds`) at guest creation time (`GuestCalculator.calculate_rotatable_bonds`) and displayed as "NRB" in `guest`/`match` CLI output.
+- `GuestCalculator.recalculate_rotatable_bonds()`: recompute a guest's rotatable bond count from its stored SMILES (mainly for backfilling guests created before this field existed).
+- `Match.guest_rotatable_bonds`: denormalized rotatable bond count, joined in alongside `guest_price_per_gram`.
+- Lightweight column-migration step in `init_db()` (`ALTER TABLE ... ADD COLUMN`) so existing databases pick up new columns like `rotatable_bonds` without a full reset.
+
+### Changed
+- `quality_score` now has three weighted components instead of two: packing coefficient (0-40, was 0-50), price (0-40, was 0-50), and guest flexibility (0-20, new) -- a rigid guest (0 rotatable bonds) gets full flexibility credit, decaying on a saturating curve (`QUALITY_FLEXIBILITY_HALF_SATURATION`, default 4 bonds) so each additional rotatable bond costs less than the last. A guest with no rotatable bond count yet gets neutral half credit, mirroring the existing missing-price handling. New config: `QUALITY_PC_WEIGHT`, `QUALITY_PRICE_WEIGHT`, `QUALITY_FLEXIBILITY_WEIGHT`, `QUALITY_FLEXIBILITY_HALF_SATURATION`.
+
 ## [0.2.0] - 2026-07-14 
 
 ### Added

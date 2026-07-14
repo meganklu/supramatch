@@ -262,12 +262,13 @@ def find(cage_id: int, pc_ideal: float, pc_tolerance: float, max_price: Optional
         cage = engine.get_cage(cage_id)
 
         click.echo(f"\nMatch(es) for cage '{cage.name}' ({format_volume(cage.cavity_volume)}):\n")
-        click.echo(f"{'#':<4} {'Guest ID':<9} {'Guest Name':<25} {'PC':>8} {'$/g':>10} {'Score':>8} {'Viable':>8}")
-        click.echo("-" * 95)
+        click.echo(f"{'#':<4} {'Guest ID':<9} {'Guest Name':<25} {'PC':>8} {'$/g':>10} {'NRB':>5} {'Score':>8} {'Viable':>8}")
+        click.echo("-" * 100)
 
         for idx, match in enumerate(matches, 1):
             pc_str = format_packing_coefficient(match.packing_coefficient)
             price_str = format_price(match.guest_price_per_gram)
+            nrb_str = str(match.guest_rotatable_bonds) if match.guest_rotatable_bonds is not None else "N/A"
             viable_str = "✓" if match.is_viable else "✗"
 
             click.echo(
@@ -276,6 +277,7 @@ def find(cage_id: int, pc_ideal: float, pc_tolerance: float, max_price: Optional
                 f"{truncate(match.guest_name, 25):<25} "
                 f"{pc_str:>8} "
                 f"{price_str:>10} "
+                f"{nrb_str:>5} "
                 f"{match.quality_score:>8.1f} "
                 f"{viable_str:>8}"
             )
