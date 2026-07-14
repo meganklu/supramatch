@@ -1,7 +1,7 @@
 """
 Vendor price lookups via ChemPrice (mcule, molport).
 
-Grounded against meganklu/ChemPrice@ba0c1fd (our fork -- see
+Grounded against meganklu/ChemPrice@9eda518 (our fork -- see
 requirements.txt), and against live runs, while designing this:
 
 - PriceCollector.check() must be called once before querying -- it's what
@@ -156,7 +156,7 @@ class PriceLookup:
                     guest_id=guest.id,
                     source=_clean_str(row.get("Source")) or "unknown",
                     supplier_name=_clean_str(row.get("Supplier Name")),
-                    purity=_clean_str(row.get("Purity")),
+                    purity=_to_float(row.get("Purity")),
                     amount=_to_float(row.get("Amount")),
                     measure=_clean_str(row.get("Measure")),
                     price_usd=price_usd,

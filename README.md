@@ -12,7 +12,7 @@ git clone https://github.com/meganklu/supramatch.git
 cd supramatch
 
 # 2. Create and activate conda environment
-# (this installs Python, RDKit, OpenBabel, MDAnalysis via conda, then
+# (this installs Python, RDKit, OpenBabel via conda, then
 # pip-installs the rest of requirements.txt into the new environment)
 conda env create -f environment.yml
 conda activate supramatch_env

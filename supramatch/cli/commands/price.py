@@ -169,11 +169,12 @@ def list_prices(guest_id: int):
 
         usd_per_mol_str = format_price(p.usd_per_mol)
         usd_per_liter_str = format_price(p.usd_per_liter)
+        purity_str = f"{p.purity:g}%" if p.purity is not None else "N/A"
 
         click.echo(
             f"{p.source or '':<12} "
             f"{(p.supplier_name or 'N/A')[:20]:<20} "
-            f"{(p.purity or 'N/A')[:10]:<10} "
+            f"{purity_str[:10]:<10} "
             f"{quoted_str:<16} "
             f"{format_price(p.usd_per_gram):>10} "
             f"{usd_per_mol_str:>12} "

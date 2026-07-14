@@ -80,6 +80,13 @@ HG_MATCH_CONFIG = {
     # this ceiling, so a price change matters more near the low end (e.g.
     # $1 -> $2) than the same dollar change near the high end (e.g. $90 -> $100).
     "quality_price_ceiling": float(os.getenv("QUALITY_PRICE_CEILING", "100")),
+
+    # Minimum vendor-reported purity (%) a price quote must meet to be
+    # considered a guest's "best price" -- a cheaper quote below this bar is
+    # excluded rather than allowed to win on price alone. Quotes with no
+    # purity reported at all are excluded too, since there's nothing to
+    # confirm they clear the bar.
+    "min_purity_pct": float(os.getenv("MIN_PURITY_PCT", "95")),
 }
 
 # ==================== PUBCHEM ====================

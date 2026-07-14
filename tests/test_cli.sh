@@ -1,6 +1,9 @@
 #!/bin/bash
 #
 # Test basic CLI usage
+# Run from inside the supramatch/tests directory
+
+export DATABASE_PATH=./data/supramatch.db
 
 eval "$(conda shell.bash hook)"
 conda activate supramatch_env
@@ -57,6 +60,11 @@ supramatch guest fetch 50-78-2 --name "Aspirin (duplicate CAS test)"
 supramatch guest list
 supramatch guest list --limit 2
 
+echo "y" | supramatch guest delete 1
+supramatch guest list
+
+supramatch guest fetch benzene
+
 supramatch guest search toluene
 supramatch guest search adamantane
 supramatch guest search aspirin
@@ -76,15 +84,15 @@ supramatch match find 2 -s price -i 0.5 -t 0.5
 # run without them (just prices nothing and reports 0 priced).
 supramatch price lookup --cage 1
 supramatch price lookup --cage 1 --all-matches --refresh
-supramatch price lookup --guest 1
-supramatch price lookup --guest 1 --refresh
-supramatch price list 1
+supramatch price lookup --guest 11
+supramatch price lookup --guest 11 --refresh
+supramatch price list 11
 
 supramatch match find 1
 
 # Full pipeline in one command, reusing the cage/guests already loaded above
-supramatch pipeline run --cage-id 1 --guest-id 1 --guest-id 2 --all-matches --limit 5
-supramatch pipeline run --cage-id 1 --guest-id 1 --guest-id 3 --refresh-prices --sort price --pc-ideal 0.5 --pc-tolerance 0.5
+supramatch pipeline run --cage-id 1 --guest-id 11 --guest-id 2 --all-matches --limit 5
+supramatch pipeline run --cage-id 1 --guest-id 11 --guest-id 3 --refresh-prices --sort price --pc-ideal 0.5 --pc-tolerance 0.5
 supramatch pipeline run --cage-pdb ./data/zd001_Picture_1.pdb --cage-name "Pipeline Cage" --guest caffeine --guest ibuprofen
 
 supramatch db status
@@ -101,10 +109,5 @@ supramatch pipeline run --guest caffeine
 supramatch pipeline run --cage-id 1 --cage-pdb ./data/zd001_Picture_1.pdb --guest caffeine
 supramatch pipeline run --cage-id 1
 
-echo "y" | supramatch guest delete 1
-supramatch guest list
-
 echo "y" | supramatch cage delete 2
 supramatch cage list
-
-echo "y" | supramatch db drop

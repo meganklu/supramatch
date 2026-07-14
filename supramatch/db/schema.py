@@ -58,7 +58,7 @@ CREATE_PRICES_TABLE = """
         guest_id        INTEGER NOT NULL REFERENCES guests(id) ON DELETE CASCADE,
         source          TEXT NOT NULL,
         supplier_name   TEXT,
-        purity          TEXT,
+        purity          REAL,
         amount          REAL,
         measure         TEXT,
         price_usd       REAL,

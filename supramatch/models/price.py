@@ -17,7 +17,7 @@ class Price:
         guest_id: Foreign key to Guest
         source: Vendor integrator, e.g. 'Molport', 'MCule', or 'Chemspace'
         supplier_name: The vendor's own supplier/catalog name
-        purity: Purity as reported by the vendor (e.g. "95%")
+        purity: Purity as reported by the vendor, as a percent (e.g. 95.0 for 95%)
         amount: Pack size
         measure: Unit for amount (e.g. 'g', 'mg', 'mmol')
         price_usd: Raw quoted price in USD
@@ -31,7 +31,7 @@ class Price:
     guest_id: int
     source: str
     supplier_name: Optional[str] = None
-    purity: Optional[str] = None
+    purity: Optional[float] = None
     amount: Optional[float] = None
     measure: Optional[str] = None
     price_usd: Optional[float] = None

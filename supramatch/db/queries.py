@@ -3,6 +3,7 @@
 import sqlite3
 from datetime import datetime
 from typing import List, Optional
+from supramatch.config import HG_MATCH_CONFIG
 from supramatch.models.cage import Cage
 from supramatch.models.guest import Guest
 from supramatch.models.match import Match
@@ -266,7 +267,10 @@ def count_guests(conn: sqlite3.Connection) -> int:
 # falling back to usd_per_mol / molecular_weight when only a molar quote exists.
 # Volume-based quotes (usd_per_liter) can't be converted without density data
 # and are left out -- a guest priced only that way is treated as unpriced.
-_BEST_PRICE_SUBQUERY = """
+# Quotes below min_purity_pct (or with no purity reported at all, so NULL >=
+# threshold is false) are excluded too -- a cheap quote can't win on price
+# alone if it doesn't clear the purity bar.
+_BEST_PRICE_SUBQUERY = f"""
     SELECT
         prices.guest_id AS guest_id,
         MIN(
@@ -280,6 +284,7 @@ _BEST_PRICE_SUBQUERY = """
         ) AS usd_per_gram
     FROM prices
     JOIN guests ON guests.id = prices.guest_id
+    WHERE prices.purity >= {HG_MATCH_CONFIG["min_purity_pct"]}
     GROUP BY prices.guest_id
 """
 
@@ -411,7 +416,7 @@ def create_price(
     guest_id: int,
     source: str,
     supplier_name: Optional[str] = None,
-    purity: Optional[str] = None,
+    purity: Optional[float] = None,
     amount: Optional[float] = None,
     measure: Optional[str] = None,
     price_usd: Optional[float] = None,
