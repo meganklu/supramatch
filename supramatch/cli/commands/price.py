@@ -22,7 +22,7 @@ from supramatch.db import queries
 from supramatch.models.guest import Guest
 from supramatch.modules.matcher import MatchingEngine
 from supramatch.discovery.price_lookup import PriceLookup
-from supramatch.utils.helpers import format_price
+from supramatch.utils.helpers import format_price, truncate
 
 logger = logging.getLogger(__name__)
 
@@ -173,7 +173,7 @@ def list_prices(guest_id: int):
 
         click.echo(
             f"{p.source or '':<12} "
-            f"{(p.supplier_name or 'N/A')[:20]:<20} "
+            f"{truncate(p.supplier_name or 'N/A', 20):<20} "
             f"{purity_str[:10]:<10} "
             f"{quoted_str:<16} "
             f"{format_price(p.usd_per_gram):>10} "

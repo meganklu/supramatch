@@ -53,6 +53,29 @@ def format_price(price: Optional[float]) -> str:
     return f"${price:.{PRICE_DECIMALS}f}"
 
 
+def truncate(text: str, width: int) -> str:
+    """
+    Truncate text to fit within width, marking cut-off text with '...'.
+
+    Args:
+        text: Text to truncate
+        width: Maximum length of the returned string
+
+    Returns:
+        str: Text unchanged if it already fits, otherwise cut short with a
+            trailing '...'
+
+    Example:
+        >>> truncate("benzene", 10)
+        'benzene'
+        >>> truncate("2,3,4,5-tetraphenylcyclopenta-2,4-dien-1-one", 10)
+        '2,3,4,...'
+    """
+    if len(text) <= width:
+        return text
+    return text[:width - 3] + "..."
+
+
 def format_packing_coefficient(pc: Optional[float]) -> str:
     """
     Format packing coefficient value.

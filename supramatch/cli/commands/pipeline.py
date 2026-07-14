@@ -16,7 +16,7 @@ import logging
 from typing import Optional, Tuple
 from supramatch.pipeline import run_pipeline
 from supramatch.config import HG_MATCH_CONFIG
-from supramatch.utils.helpers import format_volume, format_price, format_packing_coefficient
+from supramatch.utils.helpers import format_volume, format_price, format_packing_coefficient, truncate
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +132,7 @@ def run(
             click.echo(
                 f"{idx:<4} "
                 f"{match.guest_id:<9} "
-                f"{match.guest_name:<25} "
+                f"{truncate(match.guest_name, 25):<25} "
                 f"{pc_str:>8} "
                 f"{price_str:>10} "
                 f"{match.quality_score:>8.1f} "

@@ -30,7 +30,7 @@ from typing import Optional
 from supramatch.db.database import init_db
 from supramatch.modules.matcher import MatchingEngine
 from supramatch.config import HG_MATCH_CONFIG
-from supramatch.utils.helpers import format_volume, format_price, format_packing_coefficient
+from supramatch.utils.helpers import format_volume, format_price, format_packing_coefficient, truncate
 
 logger = logging.getLogger(__name__)
 
@@ -273,7 +273,7 @@ def find(cage_id: int, pc_ideal: float, pc_tolerance: float, max_price: Optional
             click.echo(
                 f"{idx:<4} "
                 f"{match.guest_id:<9} "
-                f"{match.guest_name:<25} "
+                f"{truncate(match.guest_name, 25):<25} "
                 f"{pc_str:>8} "
                 f"{price_str:>10} "
                 f"{match.quality_score:>8.1f} "

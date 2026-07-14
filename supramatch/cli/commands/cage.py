@@ -20,7 +20,7 @@ import logging
 from typing import Optional
 from supramatch.db.database import init_db
 from supramatch.modules.cage_calc import CageCalculator
-from supramatch.utils.helpers import format_volume
+from supramatch.utils.helpers import format_volume, truncate
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +126,7 @@ def list(limit: Optional[int]):
 
             click.echo(
                 f"{cage.id:<7} "
-                f"{cage.name:<20} "
+                f"{truncate(cage.name, 20):<20} "
                 f"{volume_str:<15} "
                 f"{match_count:<9} "
                 f"{cas_str:<15} "

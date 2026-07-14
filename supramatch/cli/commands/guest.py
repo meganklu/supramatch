@@ -27,7 +27,7 @@ import logging
 from typing import Optional
 from supramatch.db.database import init_db
 from supramatch.modules.guest_calc import GuestCalculator
-from supramatch.utils.helpers import format_volume
+from supramatch.utils.helpers import format_volume, truncate
 
 logger = logging.getLogger(__name__)
 
@@ -248,7 +248,7 @@ def import_guests(file: str):
                 volume_str = format_volume(guest.molecular_volume)
                 formula_str = guest.molecular_formula or "N/A"
                 cas_str = guest.cas_number or "N/A"
-                click.echo(f"{guest.name:<30} {formula_str:<12} {volume_str:<15} {cas_str}")
+                click.echo(f"{truncate(guest.name, 30):<30} {formula_str:<12} {volume_str:<15} {cas_str}")
 
             if len(guests) > 10:
                 click.echo(f"... and {len(guests) - 10} more")
@@ -305,7 +305,7 @@ def list(limit: int):
 
             click.echo(
                 f"{guest.id:<5} "
-                f"{guest.name:<25} "
+                f"{truncate(guest.name, 25):<25} "
                 f"{formula_str:<10} "
                 f"{mw_str:<12} "
                 f"{volume_str:<15} "
@@ -358,7 +358,7 @@ def search(query: str):
 
             click.echo(
                 f"{guest.id:<5} "
-                f"{guest.name:<30} "
+                f"{truncate(guest.name, 30):<30} "
                 f"{formula_str:<10} "
                 f"{mw_str:<12} "
                 f"{volume_str:<15} "
