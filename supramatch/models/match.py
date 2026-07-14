@@ -57,8 +57,12 @@ class Match:
         """
         Combined quality metric (0-100) from packing coefficient and price.
 
-        - Geometric fit: 0-50 points, full points within the ideal PC range,
-          scaled down the further packing_coefficient is outside it
+        - Geometric fit: 0-50 points, on a quadratic curve centered on the
+          ideal PC so nearby deviations cost little and the penalty
+          accelerates further out, bottoming out at 0 at
+          quality_pc_window_multiplier * pc_tolerance_default away from
+          ideal (no cliff at the pc_tolerance_default boundary itself,
+          which is_viable still uses as its pass/fail cutoff)
         - Cost efficiency: 0-50 points, lower price per gram scores higher,
           on a log scale so a given price change matters more near the low
           end (e.g. $1 -> $2) than the same change near the high end (e.g.
@@ -67,11 +71,9 @@ class Match:
         """
         pc_ideal = HG_MATCH_CONFIG["pc_ideal_default"]
         pc_tolerance = HG_MATCH_CONFIG["pc_tolerance_default"]
+        pc_window = pc_tolerance * HG_MATCH_CONFIG["quality_pc_window_multiplier"]
 
-        if abs(self.packing_coefficient - pc_ideal) <= pc_tolerance:
-            pc_score = 50
-        else:
-            pc_score = 50 - (abs(self.packing_coefficient - pc_ideal) * 100)
+        pc_score = max(0, 50 * (1 - ((self.packing_coefficient - pc_ideal) / pc_window) ** 2))
 
         if self.guest_price_per_gram:
             price_ceiling = HG_MATCH_CONFIG["quality_price_ceiling"]

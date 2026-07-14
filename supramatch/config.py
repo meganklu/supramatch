@@ -75,6 +75,13 @@ HG_MATCH_CONFIG = {
     # Default packing coefficient tolerance for viable matches
     "pc_tolerance_default": float(os.getenv("PC_TOLERANCE_DEFAULT", "0.09")),
 
+    # How many multiples of pc_tolerance_default away from pc_ideal_default
+    # the geometric-fit component of quality_score bottoms out at 0. Scored
+    # on a smooth quadratic curve inside that window (instead of a flat
+    # plateau within tolerance followed by a linear falloff), so there's no
+    # scoring cliff right at the tolerance boundary.
+    "quality_pc_window_multiplier": float(os.getenv("QUALITY_PC_WINDOW_MULTIPLIER", "3")),
+
     # Guest price per gram ($/g) at which the price component of
     # quality_score bottoms out at 0. Scored on a log scale between $0 and
     # this ceiling, so a price change matters more near the low end (e.g.
