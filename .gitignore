@@ -50,6 +50,7 @@ data/supramatch.db
 data/*.csv
 data/*.json
 data/*.xml
+data/*.txt
 logs/
 data/cages
 tests/data
@@ -67,3 +68,6 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+
+# Scripts
+scripts/
