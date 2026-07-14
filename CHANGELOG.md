@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-14
+
 ### Added
 - `guests` table: `rotatable_bonds` column, computed via RDKit (`Descriptors.NumRotatableBonds`) at guest creation time (`GuestCalculator.calculate_rotatable_bonds`) and displayed as "NRB" in `guest`/`match` CLI output.
 - `GuestCalculator.recalculate_rotatable_bonds()`: recompute a guest's rotatable bond count from its stored SMILES (mainly for backfilling guests created before this field existed).
@@ -47,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Configuration via `.env` (`CAGE_GRID_SPACING`, `GUEST_RANDOM_SEED`, `PC_IDEAL_DEFAULT`, `PC_TOLERANCE_DEFAULT`, decimal-precision and cache/scraper feature flags, etc.).
 - Logging to console and file, configurable via `LOG_LEVEL`/`LOG_FILE`.
 
-[unreleased]: https://github.com/meganklu/supramatch/compare/v0.2.0...HEAD
+[unreleased]: https://github.com/meganklu/supramatch/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/meganklu/supramatch/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/meganklu/supramatch/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/meganklu/supramatch/releases/tag/v0.1.0
