@@ -1,6 +1,5 @@
 """
-Match guest molecules to host cages based on packing coefficient, price,
-and guest flexibility.
+Match guest molecules to host cages based on structural properties and pricing.
 
 Evaluation Criteria:
     - Packing Coefficient (PC): Geometric fit (0.55 ± 0.09 optimal)
@@ -30,8 +29,7 @@ logger = logging.getLogger(__name__)
 
 class MatchingEngine:
     """
-    Match guest molecules to host cages based on packing coefficient, price,
-    and guest flexibility.
+    Match guest molecules to host cages based on structural properties and pricing.
 
     Evaluation:
         - Primary: Packing coefficient (geometric fit)
@@ -157,7 +155,8 @@ class MatchingEngine:
         max_price: float = None,
         min_price: float = None,
         sort_by: str = 'quality_score',
-        limit: int = None
+        limit: int = None,
+        in_inventory_only: bool = False,
     ) -> List[Match]:
         """
         Find matching guests for a cage with multiple filter criteria.
@@ -175,6 +174,8 @@ class MatchingEngine:
                 - 'packing_coefficient': Geometric fit (closest to ideal packing coefficient)
                 - 'price': Cost per gram (ascending)
             limit: Maximum number of results.
+            in_inventory_only: Only return matches whose guest is currently
+                in our physical inventory (see Guest.in_inventory).
 
         Returns:
             list: List of matching Match objects.
@@ -229,6 +230,7 @@ class MatchingEngine:
             pc_tolerance,
             max_price=max_price,
             min_price=min_price,
+            in_inventory_only=in_inventory_only,
         )
 
         if sort_by == 'packing_coefficient':

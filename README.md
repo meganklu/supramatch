@@ -1,6 +1,6 @@
 # Supramatch
 
-A Python program for matching host metal–organic cages to guest molecules based on packing coefficient and guest molecule price.
+A Python program for matching host metal–organic cages to guest molecules based on structural properties and pricing.
 
 ## Quick Start
 

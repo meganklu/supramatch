@@ -8,6 +8,8 @@ Usage:
     supramatch guest import <file>
     supramatch guest list [--limit LIMIT]
     supramatch guest search <query>
+    supramatch guest batch-create [IDENTIFIERS]... [--file FILE] [--in-inventory]
+    supramatch guest set-inventory <guest_id> <in|out>
     supramatch guest delete <guest_id>
 
 Examples:
@@ -18,6 +20,9 @@ Examples:
     supramatch guest import guests.csv
     supramatch guest list
     supramatch guest search benzene
+    supramatch guest batch-create 50-78-2 58-08-2 --in-inventory
+    supramatch guest batch-create --file cas_list.txt --in-inventory
+    supramatch guest set-inventory 1 in
     supramatch guest delete 1
 """
 
@@ -296,8 +301,8 @@ def list(limit: int):
             return
 
         click.echo(f"\nFound {len(guests)} guest(s):\n")
-        click.echo(f"{'ID':<5} {'Name':<25} {'Formula':<10} {'MW (g/mol)':<12} {'Volume':<15} {'NRB':<5} {'State':<8} {'CAS'}")
-        click.echo("-" * 105)
+        click.echo(f"{'ID':<5} {'Name':<25} {'Formula':<10} {'MW (g/mol)':<12} {'Volume':<15} {'NRB':<5} {'State':<8} {'Inv':<4} {'CAS'}")
+        click.echo("-" * 110)
 
         for guest in guests[:limit]:
             volume_str = format_volume(guest.molecular_volume)
@@ -305,6 +310,7 @@ def list(limit: int):
             mw_str = f"{guest.molecular_weight:.2f}" if guest.molecular_weight else "N/A"
             nrb_str = str(guest.rotatable_bonds) if guest.rotatable_bonds is not None else "N/A"
             state_str = guest.physical_state or "N/A"
+            inv_str = "✓" if guest.in_inventory else "✗"
             cas_str = guest.cas_number or "N/A"
 
             click.echo(
@@ -315,6 +321,7 @@ def list(limit: int):
                 f"{volume_str:<15} "
                 f"{nrb_str:<5} "
                 f"{state_str:<8} "
+                f"{inv_str:<4} "
                 f"{cas_str}"
             )
 
@@ -351,8 +358,8 @@ def search(query: str):
             return
 
         click.echo(f"\nFound {len(guests)} guest(s) matching '{query}':\n")
-        click.echo(f"{'ID':<5} {'Name':<30} {'Formula':<10} {'MW (g/mol)':<12} {'Volume':<15} {'NRB':<5} {'State':<8} {'CAS'}")
-        click.echo("-" * 105)
+        click.echo(f"{'ID':<5} {'Name':<30} {'Formula':<10} {'MW (g/mol)':<12} {'Volume':<15} {'NRB':<5} {'State':<8} {'Inv':<4} {'CAS'}")
+        click.echo("-" * 110)
 
         for guest in guests:
             volume_str = format_volume(guest.molecular_volume)
@@ -360,6 +367,7 @@ def search(query: str):
             mw_str = f"{guest.molecular_weight:.2f}" if guest.molecular_weight else "N/A"
             nrb_str = str(guest.rotatable_bonds) if guest.rotatable_bonds is not None else "N/A"
             state_str = guest.physical_state or "N/A"
+            inv_str = "✓" if guest.in_inventory else "✗"
             cas_str = guest.cas_number or "N/A"
 
             click.echo(
@@ -370,10 +378,111 @@ def search(query: str):
                 f"{volume_str:<15} "
                 f"{nrb_str:<5} "
                 f"{state_str:<8} "
+                f"{inv_str:<4} "
                 f"{cas_str}"
             )
 
         logger.info(f"Found {len(guests)} match(es)")
+
+    finally:
+        calc.close()
+
+
+@guest_group.command(name='batch-create')
+@click.argument('identifiers', nargs=-1)
+@click.option('--file', '-f', type=click.Path(exists=True), default=None, help='File with one name or CAS number per line')
+@click.option('--in-inventory', is_flag=True, default=False, help='Mark every guest touched (created or already existing) as in inventory')
+def batch_create(identifiers: tuple, file: Optional[str], in_inventory: bool):
+    """
+    Create guests in bulk from a list of names or CAS numbers, resolving
+    each via PubChem.
+
+    Identifiers that already exist in the database (matched by CAS number
+    or SMILES) are reused rather than duplicated. Combine identifiers given
+    directly with --file; each is looked up individually on PubChem, so
+    large lists take a while.
+
+    Examples:
+        supramatch guest batch-create 50-78-2 58-08-2
+        supramatch guest batch-create aspirin caffeine --in-inventory
+        supramatch guest batch-create --file cas_list.txt --in-inventory
+    """
+    all_identifiers = [*identifiers]
+
+    if file:
+        with open(file, 'r', encoding='utf-8') as f:
+            all_identifiers += [line.strip() for line in f if line.strip()]
+
+    if not all_identifiers:
+        click.secho("✗ Error: No identifiers given (pass them as arguments or via --file)", fg="red", err=True)
+        raise click.Abort()
+
+    logger.info(f"Batch creating {len(all_identifiers)} guest(s), in_inventory={in_inventory}")
+    init_db()
+
+    calc = GuestCalculator()
+
+    try:
+        with click_spinner.spinner():
+            click.echo(f"Resolving {len(all_identifiers)} identifier(s) via PubChem...")
+            results = calc.batch_create_from_identifiers(
+                all_identifiers,
+                mark_in_inventory=in_inventory,
+            )
+
+        click.secho(f"✓ Batch create complete:", fg="green")
+        click.echo(f"  Created:         {len(results['created'])}")
+        click.echo(f"  Already existed: {len(results['matched'])}")
+        click.echo(f"  Failed:          {len(results['failed'])}")
+
+        if results['failed']:
+            click.echo("\nFailed identifiers:")
+            for item in results['failed']:
+                click.echo(f"  {item['identifier']}: {item['error']}")
+
+        click.echo()
+        logger.info(
+            f"Batch create complete: {len(results['created'])} created, "
+            f"{len(results['matched'])} matched, {len(results['failed'])} failed"
+        )
+
+    finally:
+        calc.close()
+
+
+@guest_group.command(name='set-inventory')
+@click.argument('guest_id', type=int)
+@click.argument('status', type=click.Choice(['in', 'out']))
+def set_inventory(guest_id: int, status: str):
+    """
+    Mark whether a guest is currently in our physical inventory.
+
+    This is separate from vendor pricing/availability -- a guest can be
+    purchasable without us actually having it on hand.
+
+    Example:
+        supramatch guest set-inventory 1 in
+        supramatch guest set-inventory 1 out
+    """
+    logger.info(f"Setting inventory status for guest {guest_id}: {status}")
+    init_db()
+
+    calc = GuestCalculator()
+
+    try:
+        guest = calc.set_inventory(guest_id, in_inventory=(status == 'in'))
+
+        if not guest:
+            click.secho(f"✗ Guest {guest_id} not found", fg="red", err=True)
+            logger.warning(f"Guest {guest_id} not found")
+            raise click.Abort()
+
+        if guest.in_inventory:
+            click.secho(f"✓ '{guest.name}' marked as in inventory", fg="green")
+        else:
+            click.secho(f"✓ '{guest.name}' marked as not in inventory", fg="green")
+
+        logger.info(f"Set inventory status for '{guest.name}' to {guest.in_inventory}")
 
     finally:
         calc.close()

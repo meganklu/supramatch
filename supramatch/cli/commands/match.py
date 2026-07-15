@@ -13,6 +13,7 @@ Options:
     --min-price PRICE    Minimum guest price in $/g
     --sort METRIC        Sort by: quality_score, packing_coefficient, price
     --limit N            Maximum number of results to display (default: 20)
+    --in-inventory       Only show guests currently in our inventory
 
 Examples:
     supramatch match create 1
@@ -21,6 +22,7 @@ Examples:
     supramatch match find 1 --pc-ideal 0.5 --pc-tolerance 0.1 --limit 10
     supramatch match find 1 --sort price --max-price 5.0
     supramatch match find 1 --sort price
+    supramatch match find 1 --in-inventory
 """
 
 import click
@@ -40,8 +42,8 @@ def match_group():
     """
     Commands for finding host-guest matches.
 
-    Find optimal guest molecules for a cage based on packing coefficient,
-    price, and other metrics.
+    Find optimal guest molecules for a cage based on structural properties
+    and pricing.
     """
     pass
 
@@ -213,13 +215,14 @@ def info(cage_id: int):
     help='Sort results by metric'
 )
 @click.option('--limit', '-l', default=20, type=int, help='Maximum number of results')
-def find(cage_id: int, pc_ideal: float, pc_tolerance: float, max_price: Optional[float], min_price: Optional[float], sort: str, limit: int):
+@click.option('--in-inventory', is_flag=True, default=False, help='Only show guests currently in our inventory')
+def find(cage_id: int, pc_ideal: float, pc_tolerance: float, max_price: Optional[float], min_price: Optional[float], sort: str, limit: int, in_inventory: bool):
     """
     Find best guest matches for a cage.
 
-    Results are evaluated based on packing coefficient (geometric fit),
-    price, and other metrics. --pc-ideal/--pc-tolerance set the search
-    window itself (defaulting to the app's standard PC target).
+    Results are evaluated based on structural properties (packing
+    coefficient, guest flexibility) and pricing. --pc-ideal/--pc-tolerance
+    set the search window itself (defaulting to the app's standard PC target).
 
     Default packing coefficient ranges:
         0.0-0.3: Loose fit
@@ -232,10 +235,11 @@ def find(cage_id: int, pc_ideal: float, pc_tolerance: float, max_price: Optional
         supramatch match 1 --pc-ideal 0.3 --pc-tolerance 0.7 --limit 10
         supramatch match 1 --sort price --max-price 5.0
         supramatch match 1 --sort price
+        supramatch match 1 --in-inventory
     """
     logger.info(
         f"Finding matches for cage {cage_id}: pc={pc_ideal} ± {pc_tolerance}, "
-        f"price=${min_price}–${max_price}, sort={sort}, limit={limit}"
+        f"price=${min_price}–${max_price}, sort={sort}, limit={limit}, in_inventory={in_inventory}"
     )
     init_db()
 
@@ -251,7 +255,8 @@ def find(cage_id: int, pc_ideal: float, pc_tolerance: float, max_price: Optional
                 max_price=max_price,
                 min_price=min_price,
                 sort_by=sort,
-                limit=limit
+                limit=limit,
+                in_inventory_only=in_inventory,
             )
 
         if not matches:
@@ -262,14 +267,15 @@ def find(cage_id: int, pc_ideal: float, pc_tolerance: float, max_price: Optional
         cage = engine.get_cage(cage_id)
 
         click.echo(f"\nMatch(es) for cage '{cage.name}' ({format_volume(cage.cavity_volume)}):\n")
-        click.echo(f"{'#':<4} {'Guest ID':<9} {'Guest Name':<25} {'PC':>8} {'$/g':>10} {'NRB':>5} {'Score':>8} {'Viable':>8}")
-        click.echo("-" * 100)
+        click.echo(f"{'#':<4} {'Guest ID':<9} {'Guest Name':<25} {'PC':>8} {'$/g':>10} {'NRB':>5} {'Score':>8} {'Viable':>8} {'Inv':>5}")
+        click.echo("-" * 106)
 
         for idx, match in enumerate(matches, 1):
             pc_str = format_packing_coefficient(match.packing_coefficient)
             price_str = format_price(match.guest_price_per_gram)
             nrb_str = str(match.guest_rotatable_bonds) if match.guest_rotatable_bonds is not None else "N/A"
             viable_str = "✓" if match.is_viable else "✗"
+            inv_str = "✓" if match.guest_in_inventory else "✗"
 
             click.echo(
                 f"{idx:<4} "
@@ -279,7 +285,8 @@ def find(cage_id: int, pc_ideal: float, pc_tolerance: float, max_price: Optional
                 f"{price_str:>10} "
                 f"{nrb_str:>5} "
                 f"{match.quality_score:>8.1f} "
-                f"{viable_str:>8}"
+                f"{viable_str:>8} "
+                f"{inv_str:>5}"
             )
 
         click.echo()

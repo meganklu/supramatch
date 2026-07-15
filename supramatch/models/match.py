@@ -36,6 +36,8 @@ class Match:
             gram-based quote exists. Known limitation: volume-based quotes (usd_per_liter),
             e.g. for liquids priced by the mL, can't be converted to $/g without density data,
             so a guest priced only in those terms is treated as having no known price.)
+        guest_in_inventory: Denormalized flag for whether we currently have the guest on hand
+            (populated by queries that join guests; see Guest.in_inventory).
     """
     cage_id: int
     guest_id: int
@@ -48,6 +50,7 @@ class Match:
     guest_name: Optional[str] = None
     guest_rotatable_bonds: Optional[int] = None
     guest_price_per_gram: Optional[float] = None
+    guest_in_inventory: bool = False
 
     @property
     def is_viable(self) -> bool:
@@ -125,6 +128,7 @@ class Match:
             "guest_rotatable_bonds": self.guest_rotatable_bonds,
             "packing_coefficient": round(self.packing_coefficient, PC_DECIMALS),
             "guest_price_per_gram": round(self.guest_price_per_gram, PRICE_DECIMALS) if self.guest_price_per_gram is not None else None,
+            "guest_in_inventory": self.guest_in_inventory,
             "is_viable": self.is_viable,
             "quality_score": round(self.quality_score, 2),
             "notes": self.notes,

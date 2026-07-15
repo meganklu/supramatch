@@ -28,6 +28,7 @@ CREATE_GUESTS_TABLE = """
         molecular_formula   TEXT,
         rotatable_bonds     INTEGER,
         physical_state      TEXT,
+        in_inventory        INTEGER NOT NULL DEFAULT 0,
         created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )

@@ -53,6 +53,7 @@ data/*.xml
 data/*.txt
 logs/
 data/cages
+data/guests
 tests/data
 
 # Documentation

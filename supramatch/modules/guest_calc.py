@@ -412,6 +412,115 @@ class GuestCalculator:
             logger.error(f"Failed to recalculate rotatable bonds for {guest.name}: {e}")
             raise ValueError(f"Failed to recalculate rotatable bonds: {e}")
 
+    def batch_create_from_identifiers(
+        self,
+        identifiers: List[str],
+        mark_in_inventory: bool = False,
+    ) -> dict:
+        """
+        Resolve a list of compound names/CAS numbers via PubChem, creating
+        guests for any not already in the database.
+
+        Each identifier gets its own PubChem lookup (see pubchem_client's
+        module docstring on why name/CAS resolution can't be batched), so
+        this is network-bound and paced accordingly -- expect it to take a
+        while for large lists. An identifier already present in the
+        database (matched by CAS number or SMILES, whichever the resolved
+        compound has) is reused rather than duplicated.
+
+        Args:
+            identifiers: Compound names or CAS registry numbers.
+            mark_in_inventory: If True, mark every guest this call touches --
+                both newly created ones and pre-existing ones matched from
+                the list -- as in inventory. Guests that fail to resolve are
+                obviously not marked.
+
+        Returns:
+            dict: {
+                "created": List[Guest] newly created,
+                "matched": List[Guest] already existed, reused,
+                "failed": List[dict] {"identifier": str, "error": str},
+            }
+
+        Example:
+            >>> calc = GuestCalculator()
+            >>> results = calc.batch_create_from_identifiers(
+            ...     ["50-78-2", "58-08-2", "aspirin"], mark_in_inventory=True
+            ... )
+            >>> print(f"{len(results['created'])} created, {len(results['matched'])} matched, {len(results['failed'])} failed")
+        """
+        logger.info(f"Batch creating {len(identifiers)} guest(s) from identifiers, mark_in_inventory={mark_in_inventory}")
+
+        created: List[Guest] = []
+        matched: List[Guest] = []
+        failed: List[dict] = []
+
+        for identifier in identifiers:
+            identifier = identifier.strip()
+            if not identifier:
+                continue
+
+            try:
+                compound = pubchem_client.fetch_compound(identifier)
+                if compound is None:
+                    logger.warning(f"Could not resolve '{identifier}' on PubChem")
+                    failed.append({"identifier": identifier, "error": "not found on PubChem"})
+                    continue
+
+                existing = None
+                if compound["cas_number"]:
+                    existing = queries.get_guest_by_cas(self.conn, compound["cas_number"])
+                if existing is None and compound["smiles"]:
+                    existing = queries.get_guest_by_smiles(self.conn, compound["smiles"])
+
+                if existing:
+                    guest = existing
+                    matched.append(guest)
+                    logger.debug(f"'{identifier}' already exists as guest '{guest.name}'")
+                else:
+                    guest = self.create_guest(
+                        name=compound["name"],
+                        smiles=compound["smiles"],
+                        molecular_weight=compound["molecular_weight"],
+                        iupac_name=compound["iupac_name"],
+                        molecular_formula=compound["formula"],
+                        pubchem_cid=compound["cid"],
+                        cas_number=compound["cas_number"],
+                    )
+                    created.append(guest)
+
+                if mark_in_inventory and not guest.in_inventory:
+                    queries.update_guest_inventory(self.conn, guest.id, True)
+                    guest.in_inventory = True
+
+            except Exception as e:
+                logger.warning(f"Failed to process identifier '{identifier}': {e}")
+                failed.append({"identifier": identifier, "error": str(e)})
+
+        logger.info(
+            f"Batch create complete: {len(created)} created, "
+            f"{len(matched)} matched existing, {len(failed)} failed"
+        )
+        return {"created": created, "matched": matched, "failed": failed}
+
+    def set_inventory(self, guest_id: int, in_inventory: bool) -> Optional[Guest]:
+        """
+        Mark whether a guest is currently in our physical inventory.
+
+        Distinct from pricing/vendor availability: a guest can be
+        purchasable from a vendor without us actually having it on hand.
+        """
+        logger.debug(f"Setting inventory status for guest ID {guest_id}: in_inventory={in_inventory}")
+        guest = queries.get_guest_by_id(self.conn, guest_id)
+
+        if not guest:
+            logger.warning(f"Guest with ID {guest_id} not found")
+            return None
+
+        queries.update_guest_inventory(self.conn, guest_id, in_inventory)
+        logger.info(f"Set '{guest.name}' inventory status to {in_inventory}")
+        return queries.get_guest_by_id(self.conn, guest_id)
+
     def delete_guest(self, guest_id: int) -> bool:
         """Delete a guest from the database."""
         logger.debug(f"Deleting guest with ID: {guest_id}")

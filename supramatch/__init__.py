@@ -2,7 +2,7 @@
 Supramatch: Match metal-organic cages to guest molecules.
 
 A Python program for matching host metal–organic cages to guest molecules
-based on packing coefficient and guest molecule price.
+based on structural properties and pricing.
 
 Units:
     - Volumes: Cubic angstroms (Å³)

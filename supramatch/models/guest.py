@@ -32,6 +32,9 @@ class Guest:
             (optional; only set when created via `guest fetch`/`create_guest_from_pubchem`)
         cas_number: CAS registry number (optional)
         physical_state: solid/liquid/gas
+        in_inventory: Whether we currently physically have this guest on hand
+            (as opposed to it merely being findable/purchasable from a
+            vendor). Defaults to False; set via `guest set-inventory`.
         id: Primary key (set by database)
         created_at: Creation timestamp
     """
@@ -45,6 +48,7 @@ class Guest:
     pubchem_cid: Optional[int] = None
     cas_number: Optional[str] = None
     physical_state: Optional[str] = None
+    in_inventory: bool = False
     id: Optional[int] = None
     created_at: Optional[datetime] = None
 

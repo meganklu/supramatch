@@ -40,6 +40,7 @@ def _row_to_guest(row: sqlite3.Row) -> Guest:
         pubchem_cid=row["pubchem_cid"],
         cas_number=row["cas_number"],
         physical_state=row["physical_state"],
+        in_inventory=bool(row["in_inventory"]),
         created_at=_parse_datetime(row["created_at"]),
     )
 
@@ -58,6 +59,7 @@ def _row_to_match(row: sqlite3.Row) -> Match:
         guest_name=row["guest_name"] if "guest_name" in columns else None,
         guest_rotatable_bonds=row["guest_rotatable_bonds"] if "guest_rotatable_bonds" in columns else None,
         guest_price_per_gram=row["guest_price_per_gram"] if "guest_price_per_gram" in columns else None,
+        guest_in_inventory=bool(row["guest_in_inventory"]) if "guest_in_inventory" in columns else False,
     )
 
 
@@ -263,6 +265,16 @@ def update_guest_rotatable_bonds(conn: sqlite3.Connection, guest_id: int, rotata
     return cur.rowcount > 0
 
 
+def update_guest_inventory(conn: sqlite3.Connection, guest_id: int, in_inventory: bool) -> bool:
+    """Update whether a guest is currently in our physical inventory."""
+    cur = conn.execute(
+        "UPDATE guests SET in_inventory = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        (int(in_inventory), guest_id),
+    )
+    conn.commit()
+    return cur.rowcount > 0
+
+
 def delete_guest(conn: sqlite3.Connection, guest_id: int) -> bool:
     """Delete a guest (and its matches/prices, via ON DELETE CASCADE)."""
     cur = conn.execute("DELETE FROM guests WHERE id = ?", (guest_id,))
@@ -309,6 +321,7 @@ _MATCH_SELECT = f"""
         cages.cavity_volume AS cage_cavity_volume,
         guests.name AS guest_name,
         guests.rotatable_bonds AS guest_rotatable_bonds,
+        guests.in_inventory AS guest_in_inventory,
         best_price.usd_per_gram AS guest_price_per_gram
     FROM matches
     JOIN cages ON cages.id = matches.cage_id
@@ -364,6 +377,7 @@ def find_matches_for_cage(
     pc_tolerance: float,
     max_price: Optional[float] = None,
     min_price: Optional[float] = None,
+    in_inventory_only: bool = False,
 ) -> List[Match]:
     """
     Find matches for a cage within a packing-coefficient window and price bounds.
@@ -383,6 +397,9 @@ def find_matches_for_cage(
     if min_price is not None:
         sql += " AND best_price.usd_per_gram >= ?"
         params.append(min_price)
+
+    if in_inventory_only:
+        sql += " AND guests.in_inventory = 1"
 
     rows = conn.execute(sql, params).fetchall()
     return [_row_to_match(row) for row in rows]

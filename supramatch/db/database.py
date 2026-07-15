@@ -61,6 +61,7 @@ def close_connection() -> None:
 # column existed, so init_db adds any that are missing.
 _COLUMN_MIGRATIONS = [
     ("guests", "rotatable_bonds", "INTEGER"),
+    ("guests", "in_inventory", "INTEGER NOT NULL DEFAULT 0"),
 ]
 
 
