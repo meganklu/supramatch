@@ -10,6 +10,7 @@ Usage:
     supramatch guest search <query>
     supramatch guest batch-create [IDENTIFIERS]... [--file FILE] [--in-inventory]
     supramatch guest set-inventory <guest_id> <in|out>
+    supramatch guest show <guest_id>
     supramatch guest delete <guest_id>
 
 Examples:
@@ -23,6 +24,7 @@ Examples:
     supramatch guest batch-create 50-78-2 58-08-2 --in-inventory
     supramatch guest batch-create --file cas_list.txt --in-inventory
     supramatch guest set-inventory 1 in
+    supramatch guest show 1
     supramatch guest delete 1
 """
 
@@ -483,6 +485,64 @@ def set_inventory(guest_id: int, status: str):
             click.secho(f"✓ '{guest.name}' marked as not in inventory", fg="green")
 
         logger.info(f"Set inventory status for '{guest.name}' to {guest.in_inventory}")
+
+    finally:
+        calc.close()
+
+
+@guest_group.command()
+@click.argument('guest_id', type=int)
+def show(guest_id: int):
+    """
+    Show details for a specific guest.
+
+    Example:
+        supramatch guest show 1
+    """
+    logger.info(f"Showing guest details: {guest_id}")
+    init_db()
+
+    calc = GuestCalculator()
+
+    try:
+        guest = calc.get_guest(guest_id=guest_id)
+
+        if not guest:
+            click.secho(f"✗ Guest {guest_id} not found", fg="red", err=True)
+            logger.warning(f"Guest {guest_id} not found")
+            raise click.Abort()
+
+        click.echo(f"\nGuest: {guest.name}")
+        click.echo(f"  ID: {guest.id}")
+        click.echo(f"  SMILES: {guest.smiles}")
+        click.echo(f"  Volume: {format_volume(guest.molecular_volume)}")
+        click.echo(f"  Rotatable bonds: {guest.rotatable_bonds if guest.rotatable_bonds is not None else 'N/A'}")
+
+        if guest.molecular_weight:
+            click.echo(f"  Molecular weight: {guest.molecular_weight} g/mol")
+
+        if guest.molecular_formula:
+            click.echo(f"  Formula: {guest.molecular_formula}")
+
+        if guest.iupac_name:
+            click.echo(f"  IUPAC name: {guest.iupac_name}")
+
+        if guest.cas_number:
+            click.echo(f"  CAS: {guest.cas_number}")
+
+        if guest.physical_state:
+            click.echo(f"  State: {guest.physical_state}")
+
+        if guest.pubchem_cid:
+            click.echo(f"  PubChem CID: {guest.pubchem_cid}")
+
+        click.echo(f"  In inventory: {'✓' if guest.in_inventory else '✗'}")
+
+        if guest.created_at:
+            click.echo(f"  Created: {guest.created_at.strftime('%Y-%m-%d %H:%M:%S')}")
+
+        click.echo()
+        logger.info(f"Displayed guest {guest_id}")
 
     finally:
         calc.close()

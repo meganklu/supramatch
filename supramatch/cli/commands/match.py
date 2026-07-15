@@ -5,6 +5,7 @@ Usage:
     supramatch match create <cage_id> [--guest-ids LIST]
     supramatch match info <cage_id>
     supramatch match find <cage_id> [OPTIONS]
+    supramatch match show <match_id>
 
 Options:
     --pc-ideal IDEAL     Ideal packing coefficient (default: 0.55)
@@ -23,6 +24,7 @@ Examples:
     supramatch match find 1 --sort price --max-price 5.0
     supramatch match find 1 --sort price
     supramatch match find 1 --in-inventory
+    supramatch match show 1
 """
 
 import click
@@ -197,6 +199,55 @@ def info(cage_id: int):
         click.secho(f"✗ Error: {e}", fg="red", err=True)
         logger.error(f"Failed to get match info: {e}", exc_info=True)
         raise click.Abort()
+
+    finally:
+        engine.close()
+
+
+@match_group.command()
+@click.argument('match_id', type=int)
+def show(match_id: int):
+    """
+    Show details for a specific match.
+
+    Example:
+        supramatch match show 1
+    """
+    logger.info(f"Showing match details: {match_id}")
+    init_db()
+
+    engine = MatchingEngine()
+
+    try:
+        match = engine.get_match(match_id)
+
+        if not match:
+            click.secho(f"✗ Match {match_id} not found", fg="red", err=True)
+            logger.warning(f"Match {match_id} not found")
+            raise click.Abort()
+
+        click.echo(f"\nMatch {match.id}: '{match.cage_name}' + '{match.guest_name}'")
+        click.echo(f"  Cage ID: {match.cage_id}")
+        click.echo(f"  Guest ID: {match.guest_id}")
+
+        if match.cage_cavity_volume is not None:
+            click.echo(f"  Cage cavity volume: {format_volume(match.cage_cavity_volume)}")
+
+        click.echo(f"  Packing coefficient: {format_packing_coefficient(match.packing_coefficient)}")
+        click.echo(f"  Guest price: {format_price(match.guest_price_per_gram)}")
+        click.echo(f"  Guest rotatable bonds: {match.guest_rotatable_bonds if match.guest_rotatable_bonds is not None else 'N/A'}")
+        click.echo(f"  Guest in inventory: {'✓' if match.guest_in_inventory else '✗'}")
+        click.echo(f"  Quality score: {match.quality_score:.1f}")
+        click.echo(f"  Viable: {'✓' if match.is_viable else '✗'}")
+
+        if match.notes:
+            click.echo(f"  Notes: {match.notes}")
+
+        if match.created_at:
+            click.echo(f"  Created: {match.created_at.strftime('%Y-%m-%d %H:%M:%S')}")
+
+        click.echo()
+        logger.info(f"Displayed match {match_id}")
 
     finally:
         engine.close()
