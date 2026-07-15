@@ -300,9 +300,10 @@ class GuestCalculator:
 
         Returns:
             Guest: The created guest object, including PubChem's CID,
-                IUPAC name, molecular formula, and CAS number where available
-                (see pubchem_client's module docstring for how the CAS
-                number is picked out of PubChem's registry-numbers data).
+                IUPAC name, and molecular formula. CAS number is only set
+                if `query` was itself a CAS number (see pubchem_client's
+                module docstring for why a name-based lookup can't reliably
+                produce one).
 
         Raises:
             ValueError: If the compound can't be resolved on PubChem, or if
@@ -426,7 +427,20 @@ class GuestCalculator:
         this is network-bound and paced accordingly -- expect it to take a
         while for large lists. An identifier already present in the
         database (matched by CAS number or SMILES, whichever the resolved
-        compound has) is reused rather than duplicated.
+        compound has) is reused rather than duplicated. A created guest's
+        `cas_number` is only set when the identifier itself was a CAS
+        number -- a name identifier (e.g. "aspirin") creates a guest with
+        no CAS number, since PubChem can't reliably supply one for a
+        name-based lookup (see pubchem_client's module docstring). If a
+        matched (pre-existing) guest doesn't have a `cas_number` on file yet
+        and the identifier that matched it was itself a CAS number, that CAS
+        number is backfilled onto the existing guest -- this is how a guest
+        originally added by name (or by an older, since-removed CAS-guessing
+        heuristic) picks up a real CAS number once it's re-encountered via a
+        genuine CAS-based lookup. A matched guest that already has a
+        *different* CAS number on file is left untouched (matched by SMILES
+        despite conflicting CAS registrations is unusual enough to need a
+        person to look at it, not a silent overwrite).
 
         Args:
             identifiers: Compound names or CAS registry numbers.
@@ -439,6 +453,8 @@ class GuestCalculator:
             dict: {
                 "created": List[Guest] newly created,
                 "matched": List[Guest] already existed, reused,
+                "cas_filled": List[Guest] pre-existing guests whose missing
+                    CAS number was backfilled from this run's identifier,
                 "failed": List[dict] {"identifier": str, "error": str},
             }
 
@@ -453,6 +469,7 @@ class GuestCalculator:
 
         created: List[Guest] = []
         matched: List[Guest] = []
+        cas_filled: List[Guest] = []
         failed: List[dict] = []
 
         for identifier in identifiers:
@@ -477,6 +494,12 @@ class GuestCalculator:
                     guest = existing
                     matched.append(guest)
                     logger.debug(f"'{identifier}' already exists as guest '{guest.name}'")
+
+                    if compound["cas_number"] and not guest.cas_number:
+                        queries.update_guest_cas(self.conn, guest.id, compound["cas_number"])
+                        guest.cas_number = compound["cas_number"]
+                        cas_filled.append(guest)
+                        logger.info(f"Backfilled CAS number for '{guest.name}' from '{identifier}'")
                 else:
                     guest = self.create_guest(
                         name=compound["name"],
@@ -499,9 +522,9 @@ class GuestCalculator:
 
         logger.info(
             f"Batch create complete: {len(created)} created, "
-            f"{len(matched)} matched existing, {len(failed)} failed"
+            f"{len(matched)} matched existing ({len(cas_filled)} CAS-backfilled), {len(failed)} failed"
         )
-        return {"created": created, "matched": matched, "failed": failed}
+        return {"created": created, "matched": matched, "cas_filled": cas_filled, "failed": failed}
 
     def set_inventory(self, guest_id: int, in_inventory: bool) -> Optional[Guest]:
         """

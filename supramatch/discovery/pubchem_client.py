@@ -22,54 +22,73 @@ Grounded against the live API (not just docs) while designing this:
   misleading (e.g. methane's physical-description data includes a "Liquid"
   entry referring to its cryogenic storage form, not its state at room
   temperature). Possible false-confidence risk.
-- CAS numbers aren't a PUG REST `property` -- they come from the `xrefs/RN`
-  endpoint, which returns a CID's full "registry numbers" list. That list
-  mixes CAS numbers together with EC/EINECS numbers and isn't marked with
-  which entry is "the" CAS number, so this client picks one out itself:
-    - EC numbers always have the shape NNN-NNN-N (3 digits, 3 digits, 1
-      check digit); CAS numbers are 2-7 digits, then exactly *2* digits,
-      then 1 check digit. The middle segment's digit count (3 vs 2) is what
-      tells them apart -- a CAS number's first segment can coincidentally
-      also be 3 digits, so segment *count* alone isn't enough.
-    - Among the remaining CAS-shaped candidates, the one with the smallest
-      leading number is used: PubChem lists a compound's original/primary
-      CAS registration alongside later alternate-salt-or-source
-      registrations, and the original registration consistently has the
-      smallest number. Verified live against aspirin (CID 2244 -> 50-78-2
-      out of 6 CAS-shaped candidates), caffeine (CID 2519 -> 58-08-2 out of
-      8), and acetaminophen (CID 1983 -> 103-90-2 out of 10), each picked
-      correctly.
-  Like property batching, `xrefs/RN` accepts a comma-separated CID list in
-  one request, and a nonexistent CID doesn't break the batch -- it just
-  comes back with no `RN` key for that entry.
+- CAS numbers aren't a PUG REST `property`, and PubChem has no endpoint that
+  returns "the" CAS number for a CID: `xrefs/RN` returns a CID's full
+  registry-numbers list, mixing CAS numbers together with EC/EINECS numbers
+  with no marker for which entry is "the" CAS number. An earlier version of
+  this client guessed one out (smallest CAS-shaped number in the list), but
+  that heuristic picked the wrong registration often enough in practice to
+  be untrustworthy. So this client no longer guesses: `cas_number` is only
+  populated when the caller's own query was itself CAS-shaped (see
+  `supramatch.utils.helpers.is_cas_shaped`), in which case that exact input
+  is used verbatim -- a name-based lookup (e.g. "aspirin") always comes back
+  with `cas_number` None.
+- A CAS number resolving to nothing via `compound/name` doesn't necessarily
+  mean PubChem has no record of it: PubChem's name/synonym index doesn't
+  always include a compound's CAS number even when its registry-numbers
+  (`xref/RN`) index does. Verified live: CAS 1066-27-9 404s via
+  `compound/name/1066-27-9/cids/JSON` but resolves via
+  `compound/xref/RN/1066-27-9/cids/JSON`. So `resolve_to_cid` falls back to
+  an `xref/RN` lookup for CAS-shaped identifiers the name endpoint misses,
+  before concluding the identifier is genuinely unresolvable (as opposed to
+  just a wrong/nonexistent CAS number, e.g. a transcription error).
 """
 
-import re
 import time
 import logging
 from typing import Dict, List, Optional
 from urllib.parse import quote
 import requests
 from supramatch.config import PUBCHEM_CONFIG
+from supramatch.utils.helpers import is_cas_shaped
 
 logger = logging.getLogger(__name__)
 
 PUG_BASE = "https://pubchem.ncbi.nlm.nih.gov/rest/pug"
 _PROPERTIES = ["Title", "IUPACName", "SMILES", "MolecularWeight", "MolecularFormula"]
-_CAS_PATTERN = re.compile(r"^(\d{2,7})-\d{2}-\d$")
 
 
 def resolve_to_cid(identifier: str) -> Optional[int]:
     """
     Resolve a compound name or CAS number to a PubChem CID.
 
+    Tries PubChem's name/synonym search first. If that finds nothing and
+    `identifier` is CAS-shaped, falls back to the xref/RN (registry number)
+    lookup, since PubChem's name index doesn't always include a compound's
+    CAS number even when its registry-numbers index does (see module
+    docstring).
+
     Args:
         identifier: Compound name or CAS registry number.
 
     Returns:
-        int: The first matching CID, or None if not found.
+        int: The first matching CID, or None if not found by either method.
     """
-    url = f"{PUG_BASE}/compound/name/{quote(identifier, safe='')}/cids/JSON"
+    cid = _get_cid(f"{PUG_BASE}/compound/name/{quote(identifier, safe='')}/cids/JSON", identifier)
+    if cid is not None:
+        return cid
+
+    if is_cas_shaped(identifier):
+        cid = _get_cid(f"{PUG_BASE}/compound/xref/RN/{quote(identifier, safe='')}/cids/JSON", identifier)
+        if cid is not None:
+            return cid
+
+    logger.warning(f"PubChem could not resolve '{identifier}' by name or registry number")
+    return None
+
+
+def _get_cid(url: str, identifier: str) -> Optional[int]:
+    """Fetch a single CID from a PUG REST `.../cids/JSON` endpoint, or None on any failure."""
     try:
         response = requests.get(url, timeout=10)
     except requests.exceptions.RequestException as e:
@@ -77,7 +96,6 @@ def resolve_to_cid(identifier: str) -> Optional[int]:
         return None
 
     if response.status_code != 200:
-        logger.warning(f"PubChem could not resolve '{identifier}': HTTP {response.status_code}")
         return None
 
     cids = response.json().get("IdentifierList", {}).get("CID", [])
@@ -150,67 +168,6 @@ def fetch_properties_by_cid(cids: List[int]) -> List[dict]:
     return results
 
 
-def fetch_cas_numbers_by_cid(cids: List[int]) -> Dict[int, Optional[str]]:
-    """
-    Fetch a best-guess CAS registry number for a batch of CIDs.
-
-    Requests are chunked to PUBCHEM_CONFIG's batch size, same as
-    `fetch_properties_by_cid`. A bad/nonexistent CID doesn't break its
-    chunk -- it just comes back with no `RN` key for that entry, which
-    resolves to None below. See the module docstring for how a single CAS
-    number is picked out of PubChem's mixed CAS/EC registry-numbers list.
-
-    Args:
-        cids: PubChem CIDs to fetch CAS numbers for.
-
-    Returns:
-        dict: Maps each input CID to its picked CAS number, or None if it
-        has no CAS-shaped registry number.
-    """
-    if not cids:
-        return {}
-
-    chunk_size = PUBCHEM_CONFIG["cid_batch_size"]
-    delay = PUBCHEM_CONFIG["request_delay_seconds"]
-    results: Dict[int, Optional[str]] = {}
-
-    for start in range(0, len(cids), chunk_size):
-        chunk = cids[start:start + chunk_size]
-        cid_list = ",".join(str(c) for c in chunk)
-        url = f"{PUG_BASE}/compound/cid/{cid_list}/xrefs/RN/JSON"
-
-        try:
-            response = requests.get(url, timeout=30)
-        except requests.exceptions.RequestException as e:
-            logger.error(f"PubChem CAS lookup failed for chunk starting at {start}: {e}")
-            continue
-
-        if response.status_code != 200:
-            logger.error(f"PubChem CAS lookup failed for chunk starting at {start}: HTTP {response.status_code}")
-            continue
-
-        for entry in response.json().get("InformationList", {}).get("Information", []):
-            results[entry["CID"]] = _pick_cas_number(entry.get("RN", []))
-
-        if start + chunk_size < len(cids):
-            time.sleep(delay)
-
-    return results
-
-
-def _pick_cas_number(registry_numbers: List[str]) -> Optional[str]:
-    """Pick the likeliest CAS number out of a CID's mixed CAS/EC registry-numbers list."""
-    candidates = []
-    for rn in registry_numbers:
-        match = _CAS_PATTERN.match(rn)
-        if match:
-            candidates.append((int(match.group(1)), rn))
-
-    if not candidates:
-        return None
-    return min(candidates, key=lambda c: c[0])[1]
-
-
 def fetch_compound(query: str) -> Optional[dict]:
     """
     Resolve a single compound name/CAS number and fetch its properties.
@@ -221,10 +178,11 @@ def fetch_compound(query: str) -> Optional[dict]:
     Returns:
         dict: {cid, name, iupac_name, smiles, molecular_weight, formula,
         cas_number}, where `name` prefers PubChem's Title, falling back to
-        IUPACName, falling back to the original query. `cas_number` is
-        PubChem's picked CAS registry number (see module docstring), or
-        None if the compound has none on file. Returns None if the compound
-        could not be resolved or has no usable SMILES.
+        IUPACName, falling back to the original query. `cas_number` is the
+        query itself if it was CAS-shaped, otherwise None -- PubChem has no
+        reliable way to derive a CAS number from a name-based lookup (see
+        module docstring). Returns None if the compound could not be
+        resolved or has no usable SMILES.
     """
     cid = resolve_to_cid(query)
     if cid is None:
@@ -239,7 +197,8 @@ def fetch_compound(query: str) -> Optional[dict]:
     prop = properties[0]
     iupac_name = prop.get("IUPACName")
     title = prop.get("Title")
-    cas_number = fetch_cas_numbers_by_cid([cid]).get(cid)
+    stripped_query = query.strip()
+    cas_number = stripped_query if is_cas_shaped(stripped_query) else None
     return {
         "cid": cid,
         "name": title or iupac_name or query,

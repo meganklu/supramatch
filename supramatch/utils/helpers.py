@@ -3,9 +3,21 @@
 Simple formatting and classification helpers used throughout the project.
 """
 
+import re
 from typing import Optional
 
 from supramatch.config import VOLUME_DECIMALS, PRICE_DECIMALS, PC_DECIMALS
+
+# CAS registry numbers are 2-7 digits, then exactly 2 digits, then 1 check
+# digit. This shape is what distinguishes them from other identifiers (e.g.
+# EC/EINECS numbers, which are always NNN-NNN-N) -- see pubchem_client's
+# module docstring for why this matters for CAS number provenance.
+_CAS_PATTERN = re.compile(r"^\d{2,7}-\d{2}-\d$")
+
+
+def is_cas_shaped(identifier: str) -> bool:
+    """Whether `identifier` has the shape of a CAS registry number."""
+    return bool(_CAS_PATTERN.match(identifier.strip()))
 
 def format_volume(volume: Optional[float]) -> str:
     """

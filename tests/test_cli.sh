@@ -55,7 +55,7 @@ supramatch guest load c1cc2ccccc2cc1 --name Naphthalene \
 
 # Fetches from PubChem live -- requires network access
 supramatch guest fetch aspirin
-supramatch guest fetch 50-78-2 --name "Aspirin (duplicate CAS test)"
+supramatch guest fetch 50-78-2 --name "Aspirin (duplicate SMILES test)"
 
 supramatch guest list
 supramatch guest list --limit 2

@@ -400,9 +400,11 @@ def batch_create(identifiers: tuple, file: Optional[str], in_inventory: bool):
     each via PubChem.
 
     Identifiers that already exist in the database (matched by CAS number
-    or SMILES) are reused rather than duplicated. Combine identifiers given
-    directly with --file; each is looked up individually on PubChem, so
-    large lists take a while.
+    or SMILES) are reused rather than duplicated. If a matched guest doesn't
+    have a CAS number on file yet and the identifier that matched it was
+    itself a CAS number, that CAS number is backfilled onto the guest.
+    Combine identifiers given directly with --file; each is looked up
+    individually on PubChem, so large lists take a while.
 
     Examples:
         supramatch guest batch-create 50-78-2 58-08-2
@@ -435,7 +437,13 @@ def batch_create(identifiers: tuple, file: Optional[str], in_inventory: bool):
         click.secho(f"✓ Batch create complete:", fg="green")
         click.echo(f"  Created:         {len(results['created'])}")
         click.echo(f"  Already existed: {len(results['matched'])}")
+        click.echo(f"  CAS backfilled:  {len(results['cas_filled'])}")
         click.echo(f"  Failed:          {len(results['failed'])}")
+
+        if results['cas_filled']:
+            click.echo("\nCAS number backfilled for:")
+            for guest in results['cas_filled']:
+                click.echo(f"  {guest.name}: {guest.cas_number}")
 
         if results['failed']:
             click.echo("\nFailed identifiers:")
@@ -445,7 +453,8 @@ def batch_create(identifiers: tuple, file: Optional[str], in_inventory: bool):
         click.echo()
         logger.info(
             f"Batch create complete: {len(results['created'])} created, "
-            f"{len(results['matched'])} matched, {len(results['failed'])} failed"
+            f"{len(results['matched'])} matched ({len(results['cas_filled'])} CAS-backfilled), "
+            f"{len(results['failed'])} failed"
         )
 
     finally:

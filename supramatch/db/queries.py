@@ -211,6 +211,12 @@ def get_guest_by_smiles(conn: sqlite3.Connection, smiles: str) -> Optional[Guest
     return _row_to_guest(row) if row else None
 
 
+def get_guest_by_pubchem_cid(conn: sqlite3.Connection, pubchem_cid: int) -> Optional[Guest]:
+    """Retrieve a guest by the PubChem CID it was fetched from."""
+    row = conn.execute("SELECT * FROM guests WHERE pubchem_cid = ?", (pubchem_cid,)).fetchone()
+    return _row_to_guest(row) if row else None
+
+
 def get_guests_by_ids(conn: sqlite3.Connection, guest_ids: List[int]) -> List[Guest]:
     """Retrieve multiple guests by primary key."""
     if not guest_ids:
@@ -270,6 +276,16 @@ def update_guest_inventory(conn: sqlite3.Connection, guest_id: int, in_inventory
     cur = conn.execute(
         "UPDATE guests SET in_inventory = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
         (int(in_inventory), guest_id),
+    )
+    conn.commit()
+    return cur.rowcount > 0
+
+
+def update_guest_cas(conn: sqlite3.Connection, guest_id: int, cas_number: Optional[str]) -> bool:
+    """Update a guest's CAS registry number."""
+    cur = conn.execute(
+        "UPDATE guests SET cas_number = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        (cas_number, guest_id),
     )
     conn.commit()
     return cur.rowcount > 0
